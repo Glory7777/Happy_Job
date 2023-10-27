@@ -1,0 +1,49 @@
+0. JAVA_HOME 설정 
+   0.1 D:\egov\jdk1.8.0_181 폴더를 D:\로 d:\복사
+        D:\egov\apache-tomcat-8.0.53 폴더를 D:\로 d:\복사
+ 
+       환경변수 JAVA_HOME :  D:\jdk1.8.0_181\
+
+1. nodeJs  설치 (참조 : https://ojava.tistory.com/185)
+   node-v14.16.0-x64.exe
+
+2. Node 설치 
+   C:\nodejs>npm install
+
+3. vue 설치
+   npm install vue
+   설치 확인 : vue -V
+
+4. Vuejs Cli 설치
+  npm install -g @vue/cli
+
+5. 프로젝트 생성 (2.x 외 3.x의 차이점 참조 사이트 : https://blog.metafor.kr/201  https://ddolcat.tistory.com/1565)
+   5.1 workspace 폴더 생성
+   5.2 worksapce 폴더 cmd 에서 프로젝트 생성 (5.2.2 실행)
+       5.2.1 vue init webpack (프로젝트 이름)        
+              예) vue init webpack my-app
+       5.2.2 vue create (프로젝트 이름)  
+              vue create helloworld
+
+6. Server Run 
+   생성 프로젝트 폴더로 이동 후 실행    npm run serve   
+   확인  : http://localhost:8080/
+
+7. Vuejs 관리자 화면
+   vue ui
+
+8. Vsc 설치
+   VSCodeUserSetup-x64-1.61.0.exe 실행
+
+9. vsc 환경 설정
+   참조 : https://ojava.tistory.com/185
+           https://linked2ev.github.io/devsub/2020/08/31/Visual-Studio-Code-vue.js-%EA%B0%9C%EB%B0%9C%EC%8B%9C-%EC%B6%94%EC%B2%9C-plugin-%EC%A0%95%EB%A6%AC/
+           https://dev-onestep.tistory.com/25
+           첨부 이미지
+
+10. 프로젝트 열기
+   파일-폴더열기       해당 프로젝트 퐁\ㄹ더 열기
+
+11. 샘플소스 만들기
+
+
