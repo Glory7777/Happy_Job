@@ -1,0 +1,271 @@
+package kr.happyjob.study.mngstd.service;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import com.mysql.fabric.xmlrpc.base.Array;
+
+import kr.happyjob.study.common.comnUtils.FileUtilCho;
+import kr.happyjob.study.mngadm.model.LectureModel;
+import kr.happyjob.study.mngins.dao.ProjectDao;
+import kr.happyjob.study.mngins.model.HwkFileModel;
+import kr.happyjob.study.mngins.model.HwkModel;
+import kr.happyjob.study.mngstd.dao.SubmittedWorkDao;
+import kr.happyjob.study.mngstd.model.SmFileModel;
+import kr.happyjob.study.mngstd.model.SubmitHwkModel;
+
+
+@Service
+public class SubmittedWorkServiceImpl implements SubmittedWorkService {
+
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+	
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+
+	@Autowired
+	SubmittedWorkDao smWorkDao;
+	
+	@Autowired
+	ProjectDao projectDao;
+	
+	// 파일 업로드를 위한 경로 설정
+	// 물리경로
+	@Value("${fileUpload.rootPath}")
+	private String rootPath;
+	
+	// 상대경로
+	@Value("${fileUpload.virtualRootPath}")
+	private String virtualRootPath;
+	
+	// 이하경로
+	@Value("${fileUpload.smFilePath}")
+	private String smFilePath;
+
+	
+	/* 강의 정보 조회
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#findLecInfo(java.util.Map)
+	 * @author 김정욱
+	 */
+	@Override
+	public LectureModel findLecInfo(Map<String, Object> paramMap) throws Exception {
+		
+		// 학생 강의 코드 조회
+		int lec_cd = smWorkDao.findLecCd(paramMap);
+		paramMap.put("lec_cd", lec_cd);
+		
+		// 강의 정보 조회
+		return smWorkDao.findLecInfo(paramMap);
+	}
+
+
+	/* 과제 목록 조회 
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#findHwkList(java.util.Map)
+	 * @author 김정욱
+	 */
+	@Override
+	public List<HwkModel> findHwkList(Map<String, Object> paramMap) throws Exception {
+		return smWorkDao.findHwkList(paramMap);
+	}
+	
+	
+	/* 과제 목록 총개수
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#totalcnt(java.util.Map)
+	 * @author 김정욱
+	 */
+	@Override
+	public int totalcnt(Map<String, Object> paramMap) throws Exception {
+		return smWorkDao.totalcnt(paramMap);
+	}
+	
+	
+	/* 학생이 제출한 과제 목록 조회
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#findSmHwkList(java.util.Map)
+	 * @author 김정욱
+	 */
+	@Override
+	public List<Integer> findSmHwkList(Map<String, Object> paramMap) throws Exception {
+		return smWorkDao.findSmHwkList(paramMap);
+	}
+
+
+	/* 파일 다운로드, 파일 정보 조회
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#hwkFileInfo(java.util.Map)
+	 * @author 김정욱
+	 */
+	@Override
+	public HwkFileModel hwkFileInfo(Map<String, Object> paramMap) throws Exception {
+		return projectDao.hwkFileInfo(paramMap);
+	}
+	
+	/** 파일 정보 변환 메소드
+	 * @return map
+	 * @author 김정욱
+	 */
+	public Map<String, Object> fileToMap(HttpServletRequest request) throws Exception {
+		
+		// 파일 저장
+		MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)request;
+		
+		String itemFilePath = smFilePath + File.separator;
+		
+		logger.info("   - rootPath : " + rootPath);
+		logger.info("   - itemFilePath : " + itemFilePath);
+		logger.info("   - virtualRootPath : " + virtualRootPath);
+		
+		FileUtilCho fileUtil = new FileUtilCho(multipartHttpServletRequest, rootPath, virtualRootPath, itemFilePath);
+		Map<String, Object> fileinfo = fileUtil.uploadFiles();
+		
+		logger.info("   - file_nm : " + fileinfo.get("file_nm"));
+		logger.info("   - file_size : " + fileinfo.get("file_size"));
+		logger.info("   - file_loc : " + fileinfo.get("file_loc"));
+		logger.info("   - vrfile_loc : " + fileinfo.get("vrfile_loc"));
+		logger.info("   - fileExtension : " + fileinfo.get("fileExtension"));
+		
+		return fileinfo;
+	}
+
+
+	/* 신규 저장
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#insertHwk(java.util.Map, javax.servlet.http.HttpServletRequest)
+	 * @author 김정욱
+	 */
+	@Override
+	public String insertHwk(Map<String, Object> paramMap, HttpServletRequest request) throws Exception {
+		int result = 0;
+		String msg = null;
+		
+		Map<String, Object> fileinfo = fileToMap(request);
+		
+		paramMap.put("fileinfo", fileinfo);
+		
+		// 파일 테이블에 파일 신규 등록
+		paramMap.put("sm_file_no", 1);
+		result = smWorkDao.insertSmFile(paramMap);
+		
+		// 과제제출 테이블 저장
+		result = smWorkDao.insertHwkSm(paramMap);
+		
+		if(result != 0) msg = "저장 성공";
+		else msg = "저장 실패";
+		
+		return msg;
+	}
+
+
+	/* 과제 갱신
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#updateHwk(java.util.Map, javax.servlet.http.HttpServletRequest)
+	 * @author 김정욱
+	 */
+	@Override
+	public String updateHwk(Map<String, Object> paramMap, HttpServletRequest request) throws Exception {
+		int result = 0;
+		String msg = null;
+		
+		// 파일 갱신 O
+		// 새로운 파일 정보 저장
+		if(paramMap.get("fileYN").toString().equals("Y")){
+			Map<String, Object> fileinfo = fileToMap(request);
+			
+			paramMap.put("fileinfo", fileinfo);
+			
+			// 파일 테이블에 파일 신규 등록
+			paramMap.put("sm_file_no", 1);
+			result = smWorkDao.insertSmFile(paramMap);
+		}
+		
+		// 기존 과제 갱신
+		result = smWorkDao.updateHwkSm(paramMap);
+		
+		// 기존 파일 번호 파일 삭제
+		if(paramMap.get("fileYN").toString().equals("Y")){
+			int sm_file_no = Integer.parseInt(paramMap.get("pre_file_no").toString());
+			result = smWorkDao.deleteSmFile(sm_file_no);
+		}
+		
+		if(result != 0) msg = "갱신 성공";
+		else msg = "갱신 실패";
+		
+		return msg;
+	}
+
+
+	/* 과제 삭제
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#deleteHwk(java.util.Map, javax.servlet.http.HttpServletRequest)
+	 * @author 김정욱
+	 */
+	@Override
+	public String deleteHwk(Map<String, Object> paramMap, HttpServletRequest request) throws Exception {
+		
+		int result = 0;
+		String msg = null;
+		
+		// 외래키 순서에 맞게 삭제
+		// 과제제출 테이블에서 파일번호 조회
+		int sm_file_no = smWorkDao.findSmFileNo(paramMap);
+		
+		// 과제제출 테이블 과제 삭제
+		result = smWorkDao.deleteHwkSm(paramMap);
+		
+		// 과제제출 파일 삭제
+		result = smWorkDao.deleteSmFile(sm_file_no);
+		
+		if(result != 0) msg = "삭제 성공";
+		else msg = "삭제 실패";
+		
+		return msg;
+	}
+
+
+	/* 과제 제출 여부 조회
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#findHwkSm(java.util.Map)
+	 * @author 김정욱
+	 */
+	@Override
+	public SubmitHwkModel findHwkSm(Map<String, Object> paramMap) throws Exception {
+		return smWorkDao.findHwkSm(paramMap);
+	}
+
+
+	/* 제출된 파일 정보 조회
+	 * (non-Javadoc)
+	 * @see kr.happyjob.study.mngstd.service.SubmittedWorkService#findSmFileInfo(int)
+	 * @author 김정욱
+	 */
+	@Override
+	public SmFileModel findSmFileInfo(int sm_file_no) throws Exception {
+		return smWorkDao.findSmFileInfo(sm_file_no);
+	}
+
+
+
+
+
+
+
+	
+
+}

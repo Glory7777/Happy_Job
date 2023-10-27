@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.dashboard.dao.DashboardPcmDao">
+
+
+	<!-- 발주 리스트 -->
+	<select id="listPurchaseDirectionDashboard" parameterType="Map" resultType="kr.happyjob.study.dashboard.model.DashboardPcmModel">
+		
+			select pu.pur_cd, 	 <!-- 발주 코드 -->				  
+					  pr.pro_nm, 		<!-- 상품명 -->
+					  pr.pro_stock, 	<!-- 재고 -->	
+					  pu.pur_cnt, 		<!-- 발주 수량 -->			  
+					  pr.pro_unit_price, 	<!-- 납품단가 -->					  
+					  pu.pur_total_unit_price,	 <!-- 총 납품액 -->
+					  su.sup_cd,		<!-- 납품 업체 코드 -->				  
+					  su.sup_nm, 		<!-- 납품 업체명 -->
+					  a.name as pur_nm, 		<!-- 발주자 -->					  
+            		  pu.pur_date,		<!-- 발주 일자 -->
+            		  dc.detail_name AS pur_appr <!-- 발주 상태명 -->	
+		      from tb_purchase pu
+		              inner join tb_product pr on pu.pro_cd = pr.pro_cd				     
+				      inner join tb_supplier su on pu.sup_cd = su.sup_cd
+				      inner join (select loginid, name from tb_userinfo) a on pu.loginid = a.loginid
+					  inner join tb_detail_code dc on dc.detail_code = pu.pur_appr and dc.group_code like 'purchaseCD'
+	</select>
+
+</mapper>
+

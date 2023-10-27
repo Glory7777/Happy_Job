@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngins.dao.ProjectDao">
+
+	<!-- 진행중인 강의 정보 조회 -->
+	<select id="lecInfo" resultType="kr.happyjob.study.mngadm.model.LectureModel">
+		/*kr.happyjob.study.mngins.dao.ProjectDao.lecInfo*/
+		select le.lec_cd				<!-- 강의 코드  -->
+		 	 , le.lec_nm				<!-- 강의명 -->
+		 	 , le.loginID				<!-- 강사ID -->
+		 	 , le.lec_start_date		<!-- 시작일 -->
+			 , le.lec_end_date			<!-- 종료일 -->
+			 , le.app_cnt				<!-- 신청 인원수 -->
+			 , le.capacity				<!-- 정원 -->
+			 , le.cls_room				<!-- 강의실 -->
+			 , ui.name					<!-- 강사이름 -->
+		  from ( select lec_cd				
+		 	 		  , lec_nm				
+		 		  	  , loginID				
+				 	  , lec_start_date		
+					  , lec_end_date			
+			   		  ,	app_cnt			
+					  , capacity				
+					  , cls_room				
+		  		   from tb_lec
+		  		   where loginID = #{loginId}
+		  		     and lec_yn = 'N' 
+		  		    ) le
+	  		  	inner join tb_userinfo ui on le.loginID = ui.loginID
+	</select>
+
+
+	<!-- 과제 목록 조회 -->
+	<select id="findHwkList" resultType="kr.happyjob.study.mngins.model.HwkModel">
+		select th.lec_cd,
+			   th.hwk_no,
+			   th.hwk_nm,
+			   th.hwk_ctt,
+			   th.hwk_start_date,
+			   th.hwk_end_date,
+			   th.hwk_file_no,
+			   thf.hwk_file_nm
+		  from (select lec_cd,
+			   		   hwk_no,
+			   		   hwk_nm,
+			   		   hwk_ctt,
+			   		   hwk_start_date,
+			   		   hwk_end_date,
+			   		   hwk_file_no
+		  		  from tb_hwk
+		 		 where lec_cd = #{lec_cd}) th
+		 	left join tb_hwk_file thf on (th.hwk_file_no = thf.hwk_file_no) 
+	</select>
+	
+	
+	<!-- 학생 명단 조회 -->
+	<select id="findAppStd" resultType="map">
+		select tal.loginID,
+			   ui.name
+		  from (select loginID
+		  		  from tb_app_list
+		 		 where lec_cd = #{lec_cd}
+		   		   and app_yn = 'Y'
+		   		   and end_yn = 'N') tal
+		    inner join tb_userinfo ui on (tal.loginID = ui.loginID) 
+	</select>
+	
+	
+	<!-- 제출 현황 조회 -->
+	<select id="findHwkSmList" resultType="string">
+		select loginID
+		  from tb_hwk_sm
+		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+	</select>
+	
+	
+	<!-- 제출된 과제 정보 조회 -->
+	<select id="findHwkSmInfo" resultType="kr.happyjob.study.mngstd.model.SubmitHwkModel">
+	 	 select ths.lec_cd,
+				ths.hwk_no,
+				ths.loginID,
+				ths.sm_file_no,
+				ths.sm_date,
+				ths.sm_ctt,
+	 	 		tsf.sm_file_nm
+	 	   from (select lec_cd,
+						hwk_no,
+						loginID,
+						sm_file_no,
+						sm_date,
+						sm_ctt
+		 		   from tb_hwk_sm
+		 		  where lec_cd = #{lec_cd}
+		   			and hwk_no = #{hwk_no}
+		   			and loginID = #{loginID}) ths
+		    inner join tb_sm_file tsf on (ths.sm_file_no = tsf.sm_file_no)
+	</select>
+	
+	
+	<!-- 과제 파일 정보 조회 -->
+	<select id="hwkFileInfo" resultType="kr.happyjob.study.mngins.model.HwkFileModel">
+		select hwk_file_no,
+			   hwk_path,
+			   hwk_file_nm,
+	   		   hwk_size,
+			   hwk_extend,
+			   hwk_logical,
+			   hwk_uuid_nm
+		  from tb_hwk_file
+		 where hwk_file_no = #{hwk_file_no}
+	</select>
+	
+	
+	<!-- 신규저장 -->
+	<insert id="insertHwk">
+		<selectKey resultType="int" keyProperty="hwk_no" order="BEFORE">
+			select max(hwk_no) + 1
+               from tb_hwk
+		</selectKey>
+		
+		insert into tb_hwk(
+			lec_cd,
+			hwk_no,
+			hwk_nm,
+			hwk_ctt,
+			hwk_start_date,
+			hwk_end_date,
+			hwk_file_no
+		) values(
+			#{lec_cd},
+			#{hwk_no},
+			#{hwk_nm},
+			#{hwk_ctt},
+			#{hwk_start_date},
+			#{hwk_end_date},
+			<if test='"Y".equals(fileYN.toString())'>
+				#{hwk_file_no}
+			</if>
+			<if test='"N".equals(fileYN.toString())'>
+				default
+			</if>
+		)
+	</insert>
+
+
+	<!-- 파일 테이블에 파일 신규 저장 -->
+	<insert id="insertHwkFile">
+		<selectKey resultType="int" keyProperty="hwk_file_no" order="AFTER">
+			select last_insert_id()
+		</selectKey>	
+		
+		insert into tb_hwk_file(
+			hwk_path,
+			hwk_file_nm,
+			hwk_size,
+			hwk_extend,
+			hwk_logical,
+			hwk_uuid_nm
+		) values (
+			#{fileinfo.file_loc},
+			#{fileinfo.file_nm},
+			#{fileinfo.file_size},
+			#{fileinfo.fileExtension},
+			#{fileinfo.vrfile_loc},
+			#{fileinfo.file_nm_uuid}
+	)
+	</insert>
+
+
+	<!-- tb_hwk에 파일번호 갱신 -->
+	<update id="updateHwk">
+		update tb_hwk
+		   set hwk_nm = #{hwk_nm},
+			   hwk_ctt = #{hwk_ctt},
+			   hwk_start_date = #{hwk_start_date},
+			   hwk_end_date = #{hwk_end_date},
+			   hwk_file_no = #{hwk_file_no}
+		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+	</update>
+
+
+	<!-- 삭제 전 hwk_file_no 가져오기 -->
+	<select id="findHwkFileNo" resultType="int">
+		select hwk_file_no
+		  from tb_hwk
+		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+	</select>
+
+
+	<!-- tb_hwk 삭제 -->
+	<delete id="deleteHwk">
+		delete 
+		  from tb_hwk
+		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+	</delete>
+
+
+	<!-- tb_hwk_file 삭제 -->
+	<delete id="deleteHwkFile">
+		delete 
+		  from tb_hwk_file
+		 where hwk_file_no = #{hwk_file_no}
+	</delete>
+
+
+
+
+
+
+
+
+
+
+</mapper>
+

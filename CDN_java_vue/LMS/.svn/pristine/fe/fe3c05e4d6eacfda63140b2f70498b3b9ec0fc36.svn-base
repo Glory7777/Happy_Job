@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngins.dao.GradesMngDao">
+
+	<!-- 성적 강의 목록 -->
+	<select id="gradesList" resultType="kr.happyjob.study.mngins.model.GradesMngModel">
+		select test_cd,
+			   test_nm,
+			   test_start_date,
+			   test_end_date,
+			   tl.lec_cd,
+			   tl.lec_nm
+		  from tb_test tt
+		 inner join (
+		 	select lec_nm,
+	   			   lec_cd
+		  	  from tb_lec
+	  	     where loginID = #{loginID}
+			   and lec_yn = #{show}) tl on (tl.lec_cd = tt.lec_cd)
+		<where>
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				and test_nm Like CONCAT('%', #{searchtext}, '%')
+			</if>
+		</where>
+		order by lec_cd ASC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	<select id="totalcnt" resultType="int">
+		select count(test_cd)
+		  from tb_test tt
+		 inner join (
+		 	select lec_nm,
+	   			   lec_cd
+		  	  from tb_lec
+	  	     where loginID = #{loginID}
+			   and lec_yn = #{show}) tl on (tl.lec_cd = tt.lec_cd)
+		<where>
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				and test_nm Like CONCAT('%', #{searchtext}, '%')
+			</if>
+		</where>
+	</select>
+	
+	
+	
+	<!-- 학생 성적 목록 조회 -->
+	<select id="stuList" resultType="kr.happyjob.study.mngins.model.StuModel">
+		select ui.loginId
+			 , ui.name 
+			 , stu.score
+			 , stu.test_state
+			 , stu.test_sm_date
+		  from tb_test_submit stu
+		  inner join tb_userinfo ui on (stu.loginID = ui.loginID)
+		  WHERE stu.test_cd = #{test_cd}
+	 order by test_state DESC
+		LIMIT #{startpoint}, #{stuPageSize}
+	</select>
+	
+	
+	<!-- 학생 성적 목록 개수 조회 -->
+	<select id="stuTotalcnt" resultType="int">
+		select COUNT(loginID) 
+		  from tb_test_submit
+		 where test_cd = #{test_cd}
+		   
+	</select>
+	
+</mapper>
+

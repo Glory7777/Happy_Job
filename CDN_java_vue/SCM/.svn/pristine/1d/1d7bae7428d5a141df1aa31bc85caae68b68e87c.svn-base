@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.cus.dao.QnaDao">
+
+	<!-- Qna 목록 조회 -->
+	<select id="qnaList" resultType="kr.happyjob.study.cus.model.QnaModel">
+		/*kr.happyjob.study.cus.dao.qnaList*/
+		select qna.qna_cd
+		, qna.qna_title
+		, qna.qna_content
+		, qna.qna_reg_date
+		, qna.qna_update_date
+		, td.detail_name as qna_ct
+		, tda.detail_name as qna_yn
+		, ui.name as loginid
+		from tb_qna qna
+		left outer join tb_answer ans on qna.qna_cd = ans.qna_cd
+		inner join tb_userinfo ui on ui.loginid = qna.loginid
+		inner join tb_detail_code td on td.detail_code = qna.qna_ct and
+		td.group_code like 'categoryCD'
+		inner join tb_detail_code tda on tda.detail_code = qna.qna_yn and
+		tda.group_code like 'answerCD'
+		order by qna.qna_cd DESC
+		LIMIT
+		#{startpoint}, #{pageSize}
+	</select>
+
+	<!-- Qna 갯수 조회 -->
+	<select id="qnaTotalCnt" resultType="int">
+		/*kr.happyjob.study.cus.dao.qnaTotalCnt*/
+		select COUNT(qna.qna_cd) AS
+		tot_cnt
+		from tb_qna qna
+		inner join tb_userinfo ui on ui.loginid = qna.loginid
+	</select>
+
+	<!-- Qna 상세 보기 : 목록 조회랑 별개로 관리 필수!(qna_ct 때문) -->
+	<select id="qnaSelect" resultType="kr.happyjob.study.cus.model.QnaModel">
+		/*kr.happyjob.study.cus.dao.qnaSelect*/
+		select qna.qna_cd
+		, qna.qna_title
+		, qna.qna_content
+		, qna.qna_reg_date
+		, qna.qna_update_date
+		, qna.qna_ct
+		, qna.qna_yn
+		, ui.name as loginid
+		, ans.answer_content
+		from tb_qna qna
+		left outer join tb_answer ans on qna.qna_cd = ans.qna_cd
+		inner join tb_userinfo ui on ui.loginid = qna.loginid
+		where qna.qna_cd = #{qna_cd}
+	</select>
+
+	<!-- Qna 추가 -->
+	<insert id="insertQna">
+		<selectKey resultType="string" keyProperty="qna_cd" order="BEFORE">
+			select cast((ifnull(max(cast(qna_cd as unsigned)) ,0) + 1) as
+			char(20))
+			from tb_qna
+		</selectKey>
+		insert into tb_qna
+		(
+		qna_cd
+		, qna_title
+		, qna_content
+		, qna_reg_date
+		, qna_update_date
+		, qna_ct
+		, qna_yn
+		, loginid
+		) values (
+		#{qna_cd}
+		,#{qna_title}
+		,#{qna_content}
+		, DATE_FORMAT(now(), '%Y-%m-%d')
+		,null
+		,#{qna_ct}
+		,'0'
+		,#{loginid}
+		)
+	</insert>
+
+	<!-- Qna 수정 -->
+	<update id="updateQna">
+		update tb_qna
+		set qna_title = #{qna_title}
+		, qna_ct = #{qna_ct}
+		, qna_content = #{qna_content}
+		, qna_update_date = DATE_FORMAT(now(), '%Y-%m-%d')
+		where qna_cd = #{qna_cd}
+	</update>
+
+	<!-- Qna 삭제 -->
+	<delete id="deleteQna">
+		delete
+		from tb_qna
+		where qna_cd = #{qna_cd}
+	</delete>
+
+	<!-- Qna 삭제 시 해당 answer 값도 삭제 -->
+	<delete id="delAnswer">
+		delete
+		from tb_answer
+		where qna_cd = #{qna_cd}
+	</delete>
+
+</mapper>

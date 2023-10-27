@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.cus.dao.OrderRefundDao">
+
+	<!-- 주문 목록 조회 -->
+	<select id="orderList(backup)" resultType="kr.happyjob.study.cus.model.OrderModel">
+		/*kr.happyjob.study.cus.dao.orderList*/
+		select ord.order_cd
+				, ord.pro_cd
+				, ord.loginid
+				, ord.order_date
+				, ord.order_hope_date
+				, ord.order_price
+				, ord.order_cnt
+				, ord.refund_yn
+				, pro.pro_nm
+<!-- 				, del.deli_st -->
+		from tb_order ord
+				inner join tb_product pro on (ord.pro_cd = pro.pro_cd)
+<!-- 				left join tb_delivery del on(ord.order_cd = del.order_cd and ord.pro_cd = del.pro_cd) -->
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ord.order_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and pro.pro_nm like concat('%', #{searchText}, '%')
+			</if>
+		</where>
+				and ord.refund_yn = 0 and pro.pro_cd != 0 and ord.loginid = #{loginId}
+		order by CAST(ord.order_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+	<!-- 주문 목록 조회 -->
+	<select id="orderList" resultType="kr.happyjob.study.cus.model.OrderModel">
+		/*kr.happyjob.study.cus.dao.orderList*/
+		select ord.order_cd
+	        , group_concat(pro.pro_nm separator ' <![CDATA[&]]> ') as pro_nm
+	        , SUM(ord.order_cnt) as order_cnt
+	        , SUM(ord.order_price) as order_price
+			, ord.order_date
+	        , MAX(ord.order_hope_date) as order_hope_date
+	        , MIN(dl.deli_st) as deli_st
+		from tb_order ord
+				inner join tb_product pro on (ord.pro_cd = pro.pro_cd)
+       			left outer join tb_delivery dl on ord.order_cd = dl.order_cd and ord.pro_cd = dl.pro_cd
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ord.order_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and pro.pro_nm like concat('%', #{searchText}, '%')
+			</if>
+				and ord.refund_yn = 0 and pro.pro_cd != 0 and ord.loginid = #{loginId}
+		</where>
+		group by ord.order_cd
+		order by CAST(ord.order_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+	<!-- 목록 전체 갯수 조회 -->
+	<select id="totalOrder" resultType="int">
+		/*kr.happyjob.study.cus.dao.totalOrder*/
+		select count(A.order_cd) AS tot_cnt
+		from (
+			select ord.order_cd
+			from tb_order ord
+				inner join tb_product pro on (ord.pro_cd = pro.pro_cd)
+			<where>
+				<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+					and ord.order_date between #{searchStartDate} and #{searchEndDate}
+				</if>
+				<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+					and ord.order_date >= #{searchStartDate}
+				</if>
+				<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+					and ord.order_date <![CDATA[<=]]> #{searchEndDate}
+				</if>
+				
+				<if test="(searchText != null) and (!searchText.equals(''))">
+					and pro.pro_nm like concat('%', #{searchText}, '%')
+				</if>
+				and refund_yn = 0 and pro.pro_cd != 0
+			</where>
+			group by ord.order_cd
+		) A
+	</select>
+	
+	<!-- 주문 상세목록 조회 -->
+	<select id="orderDetailList" resultType="kr.happyjob.study.cus.model.OrderModel">
+		/*kr.happyjob.study.cus.dao.orderDetailList*/
+		select ord.order_cd
+				, pc.ct_nm
+				, pro.pro_model_nm
+				, pro.pro_nm
+				, pro.pro_mfc
+				, ord.order_cnt
+				, ord.order_price
+				, pro.pro_cd
+				, ord.refund_yn
+				, ref.refund_cnt
+      			, ref.refund_price
+		from tb_order ord
+				inner join tb_product pro on(ord.pro_cd = pro.pro_cd)
+				inner join tb_product_category pc on(pro.ct_cd = pc.ct_cd)
+				left join tb_refund ref on(ord.order_cd = ref.order_cd and ord.pro_cd = ref.pro_cd)
+		where ord.order_cd = #{orderCd}
+	</select>
+
+	<!-- 계좌정보 -->
+	<select id="orderUserInfo" resultType="kr.happyjob.study.cus.model.UserInfoModel">
+		/*kr.happyjob.study.cus.dao.orderUserInfo*/
+		select account_num
+				, bank_cd
+		from tb_userinfo
+		where loginid = #{loginId}
+	</select>
+	
+	<!-- 반품신청 -->
+	<insert id="refund">
+		<selectKey resultType="String" keyProperty="refund_cd" order="BEFORE">
+			select cast((ifnull(max(cast(refund_cd as unsigned)) , 0) +1) as char(20))
+			from tb_refund
+		</selectKey>
+		insert into tb_refund
+					(
+						refund_cd
+						, order_cd
+						, pro_cd
+						, refund_cnt
+						, refund_price
+						, refund_date
+						, refund_st
+						, refund_text
+					) values (
+						#{refund_cd}
+						, #{orderCd}
+						, #{proCd}
+						, #{refundCnt}
+						, #{refundPrice}
+						, DATE_FORMAT(now(), '%Y-%m-%d')
+						, 0
+						, #{refundText}
+					)
+	</insert>
+	
+	<!-- 주문 - 반품여부 변경 -->
+	<update id="updateOrder">
+		update tb_order
+			set refund_yn = 1
+		where order_cd = #{orderCd} and pro_cd = #{proCd}
+	</update>
+	
+</mapper>

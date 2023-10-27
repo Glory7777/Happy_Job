@@ -1,0 +1,106 @@
+package kr.happyjob.study.exe.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.exe.model.RefundConfirmModel;
+import kr.happyjob.study.exe.model.RefundListModel;
+import kr.happyjob.study.exe.service.RefundConfirmService;
+
+@Controller
+@RequestMapping("/exe/")
+public class RefundConfirmController {
+	
+	@Autowired
+	RefundConfirmService refundConfirmService;
+	
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+	// 반품승인 초기화면
+	@RequestMapping("refundConfirm.do")
+	public String refundConfirm(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".refundConfirm");
+		logger.info("   - paramMap : " + paramMap);
+		
+		logger.info("+ End " + className + ".refundConfirm");
+
+		return "exe/refundConfirmMgr";
+	}
+	  
+	// 반품 신청 목록
+	@RequestMapping("refundList.do")
+	public String refundList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception{
+		
+		logger.info("+ Start " + className + ".refundList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		int pageSize = Integer.parseInt((String)paramMap.get("pageSize"));
+		int currentPage = Integer.parseInt((String)paramMap.get("currentPage"));
+		int startPoint = ( currentPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startPoint", startPoint);
+		
+		// 전체 반품 신청 목록
+		List<RefundConfirmModel> refundDirectionList = refundConfirmService.refundDirectionList(paramMap);
+		
+		// 승인 완료된 반품 목록 (반품상태 1로 변경된것)
+		List<RefundListModel> confirmCompleteList = refundConfirmService.confirmCompleteList();
+		
+		int totalcnt = refundConfirmService.totalRefund(paramMap);
+		
+		model.addAttribute("totalcnt", totalcnt);
+		model.addAttribute("refundDirectionList", refundDirectionList);
+		model.addAttribute("confirmCompleteList", confirmCompleteList);
+		
+		logger.info("+ End " + className + ".refundList");
+		
+		return "exe/refundConfirmList";
+	}
+	
+	// 반품 승인
+	@RequestMapping("refundDirectionConfirm.do")
+	@ResponseBody
+	public Map<String, Object> refundDirectionConfirm(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception{
+		
+		logger.info("+ Start " + className + ".refundDirectionConfirm");
+		logger.info("   - paramMap : " + paramMap);
+		
+		int refundStUpdate = refundConfirmService.refundStUpdate(paramMap);
+		
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+		
+		if(refundStUpdate >= 0){
+			returnmap.put("result", "success");
+		} else{
+			returnmap.put("result", "file");
+		}
+		
+		logger.info("+ End " + className + ".refundDirectionConfirm");
+		
+		return returnmap;
+	}
+	
+}

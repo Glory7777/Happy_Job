@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngstd.dao.MylecListDao">
+
+	<!-- 수강중인 강의 목록 -->
+	<select id="myLecList" resultType="kr.happyjob.study.mngstd.model.MylecListModel">
+		  select A.*
+		  		,B.*
+		  		,C.name
+		      from tb_lec A , tb_app_list B , tb_userinfo C
+		  where 1=1
+          and A.lec_cd = B.lec_cd
+          and A.loginID = C.loginID
+		  and B.loginID =#{loginId}
+		  and B.app_yn='Y';
+	</select>
+
+	
+</mapper>
+

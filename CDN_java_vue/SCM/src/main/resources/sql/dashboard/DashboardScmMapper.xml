@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.dashboard.dao.DashboardScmDao">
+
+
+	<select id="getDataUnanswered" resultType="int">
+	/*kr.happyjob.study.dashboard.dao.getDataUnanswered*/
+		select COUNT(*)
+		from tb_qna
+		where qna_yn = '0'
+	</select>
+	<select id="getDataUnrefund" resultType="int">
+	/*kr.happyjob.study.dashboard.dao.getDataUnrefund*/
+		select COUNT(*)
+		from tb_refund
+		where refund_st = '0'
+	</select>
+	<select id="getDataUndeli" resultType="int">
+	/*kr.happyjob.study.dashboard.dao.getDataUndeli*/
+		select COUNT(*)
+		from tb_delivery
+		where deli_st = '0'
+	</select>
+	<select id="getTotalOrder" resultType="kr.happyjob.study.dashboard.model.DashboardScmModel">
+	/*kr.happyjob.study.dashboard.dao.getTotalOrder*/
+		select pro_cd, sum(order_cnt) as order_total
+		from tb_order
+		group by pro_cd
+		order by CAST(pro_cd AS SIGNED)
+	</select>
+	<select id="getTotalRefund" resultType="kr.happyjob.study.dashboard.model.DashboardScmModel">
+	/*kr.happyjob.study.dashboard.dao.getTotalRefund*/
+		select pro_cd, sum(refund_cnt) as refund_total
+		from tb_refund
+		group by pro_cd
+		order by CAST(pro_cd AS SIGNED)
+	
+	</select>
+
+</mapper>
+

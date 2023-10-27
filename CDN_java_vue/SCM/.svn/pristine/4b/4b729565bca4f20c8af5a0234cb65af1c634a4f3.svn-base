@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.pcm.dao.PurchaseDao">
+
+	<!-- 발주 리스트 -->
+	<select id="purchaseList" resultType="kr.happyjob.study.pcm.model.PurchaseModel">
+		
+		
+			select pu.pur_cd, 	 <!-- 발주 코드 -->				  
+					  pr.pro_nm, 		<!-- 상품명 -->
+					  pr.pro_stock, 	<!-- 재고 -->	
+					  pu.pur_cnt, 		<!-- 발주 수량 -->	
+					  pu.pur_date,		<!-- 발주 일자 -->		  
+					  pr.pro_unit_price, 	<!-- 납품단가 -->					  
+					  pu.pur_total_unit_price,	 <!-- 총 납품액 -->
+					  su.sup_cd,		<!-- 납품 업체 코드 -->				  
+					  su.sup_nm, 		<!-- 납품 업체명 -->
+					  a.name as pur_nm, 		<!-- 발주자 -->					  
+					  pu.pur_appr		<!-- 발주 상태 -->					 
+		      from tb_purchase pu
+		              inner join tb_product pr on pu.pro_cd = pr.pro_cd				     
+				      inner join tb_supplier su on pu.sup_cd = su.sup_cd
+				      inner join (select loginid, name from tb_userinfo) a on pu.loginid = a.loginid
+				    
+			  where pu.pur_appr in ('1', '2', '3')		   		   
+             	
+             	<if test="searchDt eq 'true'">
+                     and pu.pur_appr = '1'
+             	</if>        
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'supplier'">
+							and su.sup_nm LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or su.sup_nm LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>	
+				
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and pu.pur_date between #{searchStartDate} and #{searchEndDate}				
+				</if>
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate == null) or (searchEndDate.equals('')))">
+					and pu.pur_date >= #{searchStartDate}			
+				</if>
+				<if test="((searchStartDate == null) or (searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and pu.pur_date <![CDATA[<=]]> #{searchEndDate}				
+				</if>					
+				      
+		      order by cast(pu.pur_cd as unsigned) DESC
+		      LIMIT #{startPoint}, #{pageSize}		
+		
+		
+	</select>
+
+	<!-- 미승인이 아닌 발주 전체 건수 -->
+	<select id="totalPurchaseCnt" resultType="int">
+		select Count(pu.pur_cd)
+		from tb_purchase pu
+		 		inner join tb_product pr on pu.pro_cd = pr.pro_cd				     
+				inner join tb_supplier su on pu.sup_cd = su.sup_cd
+		where pu.pur_appr in ('1', '2', '3')
+		
+           	<if test="searchDt eq 'true'">
+                   and pu.pur_appr = '1'
+           	</if>           	      	                 	
+	               
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchsel eq 'product'">
+						and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+					</when>
+					<when test="searchsel eq 'supplier'">
+						and su.sup_nm LIKE CONCAT('%', #{searchtext}, '%')
+					</when>
+					<otherwise>
+						and (
+						             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						         or su.sup_nm LIKE CONCAT('%', #{searchtext}, '%') 
+						      )
+					</otherwise>
+				</choose>
+			</if>	
+			
+			<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+				and pu.pur_date between #{searchStartDate} and #{searchEndDate}				
+			</if>
+			<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate == null) or (searchEndDate.equals('')))">
+				and pu.pur_date >= #{searchStartDate}			
+			</if>
+			<if test="((searchStartDate == null) or (searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+				and pu.pur_date <![CDATA[<=]]> #{searchEndDate}				
+			</if>	
+	</select>
+	
+	
+	<!-- 입금 완료를 위해 발주 정보 업데이트 -->
+	<update id="purchaseUpdate">		
+		update tb_purchase
+					set pur_appr = '2', pur_pur = #{loginid}, pur_dps_date = DATE_FORMAT(now(), '%Y-%m-%d')
+					where pur_cd = #{pur_cd}		
+	</update>
+	
+	
+	<!-- 납품 업체 정보 -->
+	<select id="selectSup" resultType="kr.happyjob.study.dlm.model.SupplierInfoModel">
+		select CAST(sup_cd AS SIGNED) AS sup_cd,
+				  sup_nm,
+				  sup_manager,
+				  sup_hp,
+				  sup_addr,
+				  sup_email
+	      from tb_supplier su	     
+	      where sup_cd  = #{sup_cd}
+	</select>
+	
+	
+	
+	
+	
+</mapper>

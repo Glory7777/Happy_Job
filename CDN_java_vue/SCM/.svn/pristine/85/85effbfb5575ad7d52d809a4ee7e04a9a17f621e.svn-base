@@ -1,0 +1,112 @@
+package kr.happyjob.study.pcm.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.pcm.model.PurchaseModel;
+import kr.happyjob.study.pcm.service.PurchaseService;
+import kr.happyjob.study.scm.model.ScmOrderModel;
+import kr.happyjob.study.scm.service.OrderService;
+
+@Controller
+@RequestMapping("/pcm/")
+public class PurchaseController {
+
+	@Autowired
+	 PurchaseService  purchaseService;
+		
+	// Set logger
+	private final Logger logger=LogManager.getLogger(this.getClass());
+	
+	// Get class name for logger
+	private final String className=this.getClass().toString();
+	
+	// 발주 정보 확인 초기 화면
+	@RequestMapping("purchaseOrder.do")
+	public String purchaseOrder(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request, 
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+Start"+className+".purchaseOrder");
+		logger.info("  -paramMap : "+paramMap);
+		
+		logger.info("+End"+className+".purchaseOrder");
+		
+		return "pcm/purchaseOrder";			
+	}
+	
+	// 발주 정보 리스트
+	@RequestMapping("purchaseList.do")
+	public String purchaseList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request, 
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+Start" + className + ".purchaseList");
+		logger.info("  -paramMap : "+ paramMap);
+	
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));
+		int startPoint = (currentPage - 1) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startPoint", startPoint);
+		
+		List<PurchaseModel> purchaseList = purchaseService.purchaseList(paramMap);
+		
+		int totalPurchaseCnt = purchaseService.totalPurchaseCnt(paramMap);
+		
+		model.addAttribute("purchaseList", purchaseList);
+		model.addAttribute("totalCnt", totalPurchaseCnt);
+				
+		logger.info("+End" + className + ".purchaseList");	
+		
+		return "pcm/purchaseList";		
+				
+	}
+	
+	// 입금 완료 처리를 위해 발주 정보 업데이트
+	@RequestMapping("purchaseUpdate.do")
+	@ResponseBody	
+	public Map<String, Object> purchaseUpdate(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request, 
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".purchaseUpdate");
+		logger.info("   - paramMap : " + paramMap);
+				
+		int sqlReturn = 0;
+		
+		paramMap.put("loginid", session.getAttribute("loginId"));		
+		
+		sqlReturn = purchaseService.purchaseUpdate(paramMap);		
+		
+		Map<String, Object> returnMap = new HashMap<String, Object>();
+		
+		if(sqlReturn > 0) {
+			returnMap.put("result", "SUCCESS");
+		} else {
+			returnMap.put("result", "FAIL");
+		}
+		
+		logger.info("+ End " + className + ".purchaseUpdate");	
+		
+		return returnMap;		
+	}
+
+	
+	
+	
+	
+	
+}

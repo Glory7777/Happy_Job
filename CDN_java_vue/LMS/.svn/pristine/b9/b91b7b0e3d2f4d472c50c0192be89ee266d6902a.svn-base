@@ -1,0 +1,78 @@
+package kr.happyjob.study.prsadm.service;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import kr.happyjob.study.prsadm.dao.StdDao;
+import kr.happyjob.study.prsadm.model.StdLecModel;
+import kr.happyjob.study.prsadm.model.StdModel;
+
+@Service
+public class StdServiceImpl implements StdService {
+
+	@Autowired
+	StdDao stdDao; // stdDao랑 자동연결
+//리스트 조회
+	@Override
+	public List<StdModel> listStd(Map<String, Object> paramMap) throws Exception{ 
+
+		List<StdModel> listStd = stdDao.listStd(paramMap);//컨트롤에서 받아서 바로  다오로 던지고 받기
+		return listStd;
+	}
+//리스트 총 수량 조회
+	@Override
+	public int totalCnt(Map<String, Object> paramMap) throws Exception {
+		int totalCnt = stdDao.totalCnt(paramMap);
+		return totalCnt;
+	}
+    // 1건 조회
+	@Override
+	public StdModel selectStd(Map<String, Object> paramMap) throws Exception {
+		return stdDao.selectStd(paramMap);
+	}
+
+	/** 학생 등록 */
+	public int insertStd(Map<String, Object> paramMap) throws Exception {
+		stdDao.insertStdCtg(paramMap);
+		return stdDao.insertStd(paramMap);
+	}
+	
+	/** 학생 수정 */
+	public int updateStd(Map<String, Object> paramMap) throws Exception {
+		return stdDao.updateStd(paramMap);
+	}
+	
+	/** 학생 삭제 */
+	public int deleteStd(Map<String, Object> paramMap) throws Exception {
+		return stdDao.deleteStd(paramMap);
+	}
+	
+	///// 여기서 부터 하단 모달
+	@Override
+	public List<StdLecModel> listStdLec(Map<String, Object> paramMap) throws Exception{ 
+
+		List<StdLecModel> listStdLec = stdDao.listStdLec(paramMap);//컨트롤에서 받아서 바로  다오로 던지고 받기
+		return listStdLec;
+	}
+	//리스트 총 수량 조회
+	@Override
+	public int totalCntStdLec(Map<String, Object> paramMap) throws Exception {
+		int totalCntStdLec = stdDao.totalCntStdLec(paramMap);
+		return totalCntStdLec;
+	}
+	// 1건 조회
+	@Override
+	public StdLecModel selectLec(Map<String, Object> paramMap) throws Exception {
+		return stdDao.selectLec(paramMap);
+	}
+}

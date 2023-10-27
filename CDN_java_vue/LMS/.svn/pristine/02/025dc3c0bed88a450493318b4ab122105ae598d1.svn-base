@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngadm.dao.LecDao">
+   
+   	<!-- 강의 목록 -->
+	<select id="lecList" resultType="kr.happyjob.study.mngadm.model.LectureModel">
+		/*kr.happyjob.study.mngadm.dao.LecDao.lecList*/
+		select lec_cd			<!-- 강의 코드  -->
+			 , lec_nm			<!-- 강의명 -->
+			 , lec_ctg			<!-- 분류(실업자, 재직자) -->
+			 , name				<!-- 강사이름 -->
+			 , cls_room			<!-- 강의실 -->
+			 , app_cnt			<!-- 신청 인원수 -->
+			 , capacity			<!-- 정원 -->
+			 , lec_start_date	<!-- 시작일 -->
+			 , lec_end_date		<!-- 종료일 -->
+	 	  from tb_lec le
+	 	  	   inner join tb_userinfo ui on le.loginID = ui.loginID
+ 	  	 where lec_yn = #{show}
+		 <if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'lectureName'.toString()">
+						and lec_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'instName'.toString()">
+						and name LIKE CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+						     lec_nm Like CONCAT('%', #{searchText}, '%')
+						     or name LIKE CONCAT('%', #{searchText}, '%') 
+						      )
+					</otherwise>
+				</choose>
+		 </if>
+ 	  	 order by le.lec_cd DESC
+		 LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	<!-- 강의 목록 갯수 조회 -->
+	<select id="totalcnt" resultType="int">
+		/*kr.happyjob.study.mngadm.dao.LecDao.totalcnt*/
+		select COUNT(le.lec_cd) AS tot_cnt 
+          from tb_lec le
+               inner join tb_userinfo ui on le.loginID = ui.loginID
+         where lec_yn = #{show}
+     	<if test="(searchText != null) and (!searchText.equals(''))">
+			<choose>
+				<when test="searchSel eq 'lectureName'.toString()">
+					and lec_nm Like CONCAT('%', #{searchText}, '%')
+				</when>
+				<when test="searchSel eq 'instName'.toString()">
+					and name LIKE CONCAT('%', #{searchText}, '%')
+				</when>
+				<otherwise>
+					and (
+					     lec_nm Like CONCAT('%', #{searchText}, '%')
+					     or name LIKE CONCAT('%', #{searchText}, '%') 
+					      )
+				</otherwise>
+			</choose>
+		 </if>  
+	</select>
+	
+	
+	<!-- 강의실 사용 업데이트 -->
+	<update id="clsRoomUpdate">
+		/*kr.happyjob.study.mngadm.dao.LecDao.clsRoomUpdate*/
+		update tb_cls_room 
+	   	   set cls_room_use_yn = 'Y'
+	     where cls_room_nm = #{cls_room}
+	</update>
+	
+	
+	<!-- 기존 강의실 사용 업데이트 -->
+	<update id="beforeClsRoomUpdate">
+		/*kr.happyjob.study.mngadm.dao.LecDao.beforeClsRoomUpdate*/
+		update tb_cls_room 
+	   	   set cls_room_use_yn = 'N'
+	     where cls_room_nm = #{before_cls_room}
+	</update>
+	
+	
+	<!-- 강의 등록 -->
+	<insert id="insertLec">
+		/*kr.happyjob.study.mngadm.dao.LecDao.insertLec*/
+		insert into tb_lec (
+			  lec_nm
+			, lec_ctg
+			, loginID
+			, lec_start_date
+			, lec_end_date
+			, lec_days
+			, capacity
+			, cls_room
+			, lec_yn
+		) values(
+			  #{lec_nm}
+			, #{lec_ctg}
+			, #{loginID}
+			, #{lec_start_date}
+			, #{lec_end_date}
+			, #{lec_days}
+			, #{capacity}
+			, #{cls_room}
+			, 'N'
+		)
+	</insert>
+	
+	
+	<!-- 강의실 목록 조회 -->
+	<select id="clsRoomList" resultType="map">
+		/*kr.happyjob.study.mngadm.dao.LecDao.clsRoomList*/
+		select cls_room_nm
+			 , cls_room_seat
+		  from tb_cls_room
+		 where cls_room_use_yn = 'N' 
+		   and (cls_room_etc is null or cls_room_etc = '')
+	</select>
+	
+	
+	<!-- 강사 목록 조회 -->
+	<select id="insList" resultType="map">
+		/*kr.happyjob.study.mngadm.dao.LecDao.insList*/
+		select ui.loginID, ui.name
+	      from (select loginID, name from tb_userinfo where user_type = 'B' and status_yn = 'Y') ui
+	 	       left join (select loginID, lec_yn from tb_lec where lec_yn = 'N') le on (ui.loginID = le.loginID)
+	     where le.lec_yn is null
+	</select>
+	
+	
+	<!-- 강의 내용 조회 -->
+	<select id="selectLec" resultType="kr.happyjob.study.mngadm.model.LectureModel">
+		/*kr.happyjob.study.mngadm.dao.LecDao.selectLec*/
+		select le.lec_cd				<!-- 강의 코드  -->
+		 	 , le.lec_nm				<!-- 강의명 -->
+		 	 , le.lec_ctg				<!-- 분류(실업자, 재직자) -->
+		 	 , le.loginID				<!-- 강사ID -->
+		 	 , le.lec_start_date		<!-- 시작일 -->
+			 , le.lec_end_date			<!-- 종료일 -->
+			 , le.lec_days				<!-- 과정 일수 -->
+			 , le.capacity				<!-- 정원 -->
+			 , le.cls_room				<!-- 강의실 -->
+			 , ui.name					<!-- 강사이름 -->
+		  from ( select lec_cd				
+		 	 		  , lec_nm				
+		 	 		  , lec_ctg				
+		 		  	  , loginID				
+				 	  , lec_start_date		
+					  , lec_end_date			
+			   		  , lec_days
+					  , capacity				
+					  , cls_room				
+		  		   from tb_lec
+		  		   where lec_cd = #{lec_cd}) le
+	  		  	inner join tb_userinfo ui on le.loginID = ui.loginID
+	</select>
+	
+	
+	<!-- 강의 갱신 -->
+	<update id="updateLec">
+		/*kr.happyjob.study.mngadm.dao.LecDao.updateLec*/
+		update tb_lec 
+		   set lec_nm = #{lec_nm}
+		   	 , lec_ctg = #{lec_ctg}
+		   	 , capacity = #{capacity}
+		   	 , loginID = #{loginID}
+		   	 , cls_room = #{cls_room}
+		   	 , lec_days = #{lec_days}
+		   	 , lec_start_date = #{lec_start_date}
+		   	 , lec_end_date = #{lec_end_date}
+		 where lec_cd = #{lec_cd}
+	</update>
+	
+	
+	<!-- 강의 삭제 -->
+	<delete id="deleteLec">
+		/*kr.happyjob.study.mngadm.dao.LecDao.deleteLec*/
+		delete 
+		  from tb_lec 
+		 where lec_cd = #{lec_cd}
+	</delete>
+	
+	
+	<!-- 학생 목록 조회 -->
+	<select id="stdList" resultType="kr.happyjob.study.mngadm.model.StdModel">
+		/*kr.happyjob.study.mngadm.dao.LecDao.stdList*/
+		select ui.name
+			 , ui.hp 
+			 , ui.email
+			 , le.lec_nm
+		  from (select loginID, lec_cd
+				  from tb_app_list
+				 where lec_cd = #{lec_cd}
+				   and app_yn = 'Y') al
+		  inner join tb_userinfo ui on (al.loginID = ui.loginID)
+		  inner join tb_lec le on (al.lec_cd = le.lec_cd)
+	</select>
+	
+	
+	<!-- 학생 목록 갯수 조회 -->
+	<select id="stdTotalcnt" resultType="int">
+		/*kr.happyjob.study.mngadm.dao.LecDao.stdTotalcnt*/
+		select COUNT(loginID) AS tot_cnt
+		  from tb_app_list
+		 where lec_cd = #{lec_cd}
+		   and app_yn = 'Y'
+	</select>
+	
+	<!-- tb_lec 강의 종료 갱신 -->
+	<update id="closeLecOneTbLec">
+		update tb_lec
+		   set lec_yn = 'Y'
+		 where lec_cd = #{lec_cd}
+	</update>
+	
+	
+	<!-- tb_app_list 강의 종료 갱신 -->
+	<update id="closeLecOneTbAppList">
+		update tb_app_list
+		   set end_yn = 'Y'
+		 where lec_cd = #{lec_cd}
+	</update>
+	
+	
+	<!-- tb_cls_room 사용 여부 갱신 -->
+	<update id="closeLecOneTbClsRoom">
+		update tb_cls_room
+		   set cls_room_use_yn = 'N'
+		 where cls_room_nm = #{cls_room}
+	</update>
+	
+	
+	<!-- 기간 지난 강의 목록 -->
+	<select id="endLecList" resultType="map">
+		select tl.lec_cd,
+			   tl.cls_room
+		  from (select lec_cd,
+			   		   cls_room,
+			   		   lec_end_date
+			   	  from tb_lec
+			   	 where lec_yn = 'N') tl
+		 <![CDATA[
+		 where tl.lec_end_date < curdate()
+		 ]]>
+	</select>
+	
+	
+	
+	
+	
+	
+	
+</mapper>

@@ -1,0 +1,41 @@
+package kr.happyjob.study.prsadm.service;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import kr.happyjob.study.prsadm.model.StdLecModel;
+import kr.happyjob.study.prsadm.model.StdModel;
+
+public interface StdService {
+
+	/** 학생 목록 조회 */
+	public List<StdModel> listStd(Map<String, Object> paramMap) throws Exception; 
+	
+	/** 학생 카운트 조회 */
+	public int totalCnt(Map<String, Object> paramMap) throws Exception;
+	
+	/** 학생 한건 조회 */
+	public StdModel selectStd(Map<String, Object> paramMap) throws Exception;
+	
+	
+	/** 학생 등록 */
+	public int insertStd(Map<String, Object> paramMap) throws Exception;
+	
+	/** 학생 수정 */
+	public int updateStd(Map<String, Object> paramMap) throws Exception;
+	
+	/** 학생 삭제 */
+	public int deleteStd(Map<String, Object> paramMap) throws Exception;
+	
+	/** 학생 목록 조회 */
+	public List<StdLecModel> listStdLec(Map<String, Object> paramMap) throws Exception; 
+	
+	/** 학생 카운트 조회 */
+	public int totalCntStdLec(Map<String, Object> paramMap) throws Exception;
+	/** 강의 상세 조회 */
+	public StdLecModel selectLec(Map<String, Object> paramMap) throws Exception;
+
+	
+}

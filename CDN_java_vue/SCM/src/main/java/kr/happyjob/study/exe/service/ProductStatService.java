@@ -1,0 +1,22 @@
+package kr.happyjob.study.exe.service;
+
+import java.util.List;
+import java.util.Map;
+
+import kr.happyjob.study.exe.model.PieChartData;
+import kr.happyjob.study.exe.model.ProductModel;
+import kr.happyjob.study.exe.model.SalesDetailModel;
+
+public interface ProductStatService {
+
+	// 상품 조회
+	public List<ProductModel> productList(Map<String, Object> paramMap) throws Exception;
+	public int productTotal(Map<String, Object> paramMap) throws Exception;
+	
+	// 상세 조회
+	public List<SalesDetailModel> dtList(Map<String, Object> paramMap) throws Exception;
+	public int dtTotal(Map<String, Object> paramMap) throws Exception;
+	public List<PieChartData> productPieChart(Map<String, Object> paramMap) throws Exception;
+	public List<SalesDetailModel> dtListvue(Map<String, Object> paramMap) throws Exception;
+
+}

@@ -1,0 +1,241 @@
+package kr.happyjob.study.scm.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.scm.model.ProductModel;
+import kr.happyjob.study.scm.model.SupplierModel;
+import kr.happyjob.study.scm.service.ScmProductService;
+
+
+@Controller
+@RequestMapping("/scm/")
+public class ScmProductController {
+	
+	@Autowired
+	ScmProductService productService;
+	
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+	
+
+	/**
+	 * 제품정보 관리페이지 vue
+	 */
+	@RequestMapping("productInfovue.do")
+	public String productInfovue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".productInfovue");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".productInfovue");
+		
+		List<SupplierModel> supList = productService.supList();
+		model.addAttribute("supList", supList);
+		String userType = (String) session.getAttribute("user_type"); // 유저타입 가지고 있기
+		model.addAttribute("userType", userType);
+		String loginID = (String) session.getAttribute("loginId"); // 로그인 세션에서 로그인 아이디 가지고 있기
+		model.addAttribute("loginID", loginID);
+		
+
+		
+
+		return "scm/vueProductMgr";
+	}
+	
+
+	/**
+	 * 제품정보 목록 조회
+	 */
+	@RequestMapping("productListvue.do")
+	@ResponseBody
+	public Map<String,Object> productListvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".productListvue");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		List<SupplierModel> supSelectOption = productService.supList();
+
+		
+		List<ProductModel> productList = productService.productList(paramMap);
+		
+		int totalCnt = productService.productTotal(paramMap);
+		
+		
+		
+		Map<String,Object> resultMap = new HashMap<String,Object>();
+		
+		
+		resultMap.put("supSelectOption", supSelectOption);
+		resultMap.put("productList", productList);
+		resultMap.put("totalCnt", totalCnt);
+		
+		logger.info("+ End " + className + ".productListvue");
+
+		return resultMap;
+	}
+	
+	
+	
+	
+	// ======================================================================
+	
+	
+	
+	/**
+	 * 제품정보 관리페이지
+	 */
+	@RequestMapping("productInfo.do")
+	public String productMgr(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".productMgr");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".productMgr");
+		
+
+		List<SupplierModel> supList = productService.supList();
+		
+		model.addAttribute("supList", supList);
+
+		return "scm/productMgr";
+	}
+	
+	
+	/**
+	 * 제품정보 목록 조회
+	 */
+	@RequestMapping("productList.do")
+	public String productList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".productList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		List<ProductModel> productList = productService.productList(paramMap);
+		
+		int totalCnt = productService.productTotal(paramMap);
+		
+		
+		model.addAttribute("productList", productList);
+		model.addAttribute("totalCnt", totalCnt);
+		
+		logger.info("+ End " + className + ".productList");
+
+		return "scm/productList";
+	}
+	
+	/**
+	 * 제품정보 한건 조회
+	 */
+	@RequestMapping("productSelect.do")
+	@ResponseBody
+	public Map<String,Object> productSelect(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".productSelect");
+		logger.info("   - paramMap : " + paramMap);
+		
+		Map<String,Object> returnMap =  new HashMap<String,Object>();
+				
+		ProductModel productSelect	 = productService.productSelect(paramMap);
+		
+		List<SupplierModel> selectSupList = productService.selectSupList(paramMap);
+		String supList = "";
+		
+		for(int i=0; i<selectSupList.size(); i++){
+			SupplierModel supplier = selectSupList.get(i);
+			supList += supplier.getSup_nm();
+			logger.info(supplier.getSup_nm());
+			if(i != selectSupList.size()-1){
+				supList += " , ";
+			}
+		}
+		
+		logger.info(supList);
+		
+		returnMap.put("productSelect", productSelect);
+		returnMap.put("supList", supList);
+		
+			
+		logger.info("+ End " + className + ".productSelect");
+
+		return returnMap;
+	}
+	
+	
+	/**
+	 * 제품정보 저장
+	 */
+	@RequestMapping("productSave.do")
+	@ResponseBody
+	public Map<String, Object> productSave(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".productSave");
+		logger.info("   - paramMap : " + paramMap);
+		
+		String action = (String) paramMap.get("action");
+		int sqlreturn = 0;
+		
+		paramMap.put("loginid", session.getAttribute("loginId") );
+		
+		
+		if("I".equals(action)) {
+			sqlreturn = productService.insertProduct(paramMap,request);
+		} else if("U".equals(action)) {
+			sqlreturn = productService.updateProduct(paramMap,request);
+		} else if("D".equals(action)) {
+			sqlreturn = productService.deleteProduct(paramMap);
+		}
+		
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+		
+		if(sqlreturn >= 0) {
+			returnmap.put("result", "SUCCESS");
+		} else {
+			returnmap.put("result", "FAIL");
+		}
+		
+		logger.info("+ End " + className + ".productSave");
+
+		return returnmap;
+	}	
+		
+	    
+}

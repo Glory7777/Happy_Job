@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.sptins.dao.LecPlanDao">
+   
+	<!-- 강의 목록 조회 -->
+	<select id="findLecList" resultType="kr.happyjob.study.mngadm.model.LectureModel">
+		/* kr.happyjob.study.sptins.dao.LecPlanDao.findLecList */
+		select lec_cd				<!-- 과목 코드 -->
+			 , lec_nm				<!-- 과목명 -->
+			 , lec_ctg				<!-- 분류(실업자, 재직자) -->
+			 , lec_start_date		<!-- 시작일 -->
+			 , lec_end_date			<!-- 종료일 -->
+	   		 , app_cnt				<!-- 신청 인원 -->
+			 , capacity				<!-- 정원 -->
+			 , name					<!-- 강사 이름 -->
+		from tb_lec le
+			 inner join tb_userinfo ui on (le.loginID = ui.loginID)
+	   where lec_yn = #{show}
+		<if test="(searchText != null) and (!searchText.equals(''))">
+			and lec_nm Like CONCAT('%', #{searchText}, '%')
+		</if>
+	</select>
+	
+	
+	<!-- 강의 목록 총 갯수 -->
+	<select id="totalcnt" resultType="int">
+		/* kr.happyjob.study.sptins.dao.LecPlanDao.totalcnt */
+		select COUNT(lec_cd)
+		  from tb_lec
+	     where lec_yn = #{show}
+   		<if test="(searchText != null) and (!searchText.equals(''))">
+			and lec_nm Like CONCAT('%', #{searchText}, '%')
+		</if>
+	</select>
+	
+	
+	<!-- 강의 정보 조회 -->
+	<select id="selectLec" resultType="kr.happyjob.study.sptins.model.LecPlanModel">
+		/* kr.happyjob.study.sptins.dao.LecPlanDao.selectLec */
+		select lec_cd
+	 		 , lec_nm
+			 , lec_ctg
+			 , le.loginID
+			 , cls_room
+			 , lec_goal
+			 , name
+			 , email
+			 , hp
+  		  from (select lec_cd
+	 				 , lec_nm
+	 				 , lec_ctg
+					 , loginID
+					 , cls_room
+					 , lec_goal
+ 				  from tb_lec
+ 				 where lec_cd = #{lec_cd}) le
+ 			   inner join tb_userinfo ui on (le.loginID = ui.loginID);
+	</select>
+	
+	
+	<!-- 주차수 목록 조회 -->
+	<select id="findWeeklyList" resultType="kr.happyjob.study.sptins.model.WeeklyModel">
+		/* kr.happyjob.study.sptins.dao.LecPlanDao.findWeeklyList */
+		select lec_cd
+			 , weekly_no
+			 , week_goal
+			 , week_ctt
+			 , lec_file_no
+		  from tb_lec_week
+		 where lec_cd = #{lec_cd} 
+	</select>
+	
+</mapper>
+

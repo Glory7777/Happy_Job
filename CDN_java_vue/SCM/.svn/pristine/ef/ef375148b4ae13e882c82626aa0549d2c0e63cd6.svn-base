@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.ScmPurchaseDao">
+
+	<!-- 상품 리스트 -->
+	<select id="scmPurchaseList" resultType="kr.happyjob.study.scm.model.ScmPurchaseModel">
+	
+		select pu.pur_cd,		 <!-- 발주 코드 -->
+		          pr.pro_nm,	 <!-- 상품명 -->
+		          pr.pro_unit_price,		 <!-- 납품 단가 -->
+		          pu.pur_cnt,		 <!-- 발주 수량 -->
+		          pu.pur_total_unit_price,	 <!-- 총 납품액 -->	
+		          su.sup_nm,		 <!-- 납품 업체명 -->	
+		          a.name as pur_nm1,		 <!-- 발주자 -->	
+		          pu.pur_date,		 <!-- 발주 일자 -->
+		          pu.pur_appr		 <!-- 발주 승인 -->
+		  from tb_purchase pu
+		          inner join tb_product pr on pu.pro_cd = pr.pro_cd
+		          inner join tb_supplier su on pu.sup_cd = su.sup_cd
+		          inner join (select name, loginid from tb_userinfo) a on a.loginid = pu.loginid
+		   <where>		   		
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'supplier'">
+							and su.sup_nm LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or su.sup_nm LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+				
+				<if test="(selectedRadio != null) and (!selectedRadio.equals(''))">
+					<choose>
+						<when test="selectedRadio eq 'all'">
+							and pu.pur_appr in ('0', '1', '2', '3')
+						</when>
+						<when test="selectedRadio eq 'unAppr'">
+							and pu.pur_appr = '0'
+						</when>
+						<when test="selectedRadio eq 'appr'">
+							and pu.pur_appr = '1'
+						</when>
+						<when test="selectedRadio eq 'deposit'">
+							and pu.pur_appr = '2'
+						</when>						
+						<when test="selectedRadio eq 'stock'">
+							and pu.pur_appr = '3'
+						</when>
+					</choose>
+				</if>
+				
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and pu.pur_date between #{searchStartDate} and #{searchEndDate}				
+				</if>
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate == null) or (searchEndDate.equals('')))">
+					and pu.pur_date >= #{searchStartDate}			
+				</if>
+				<if test="((searchStartDate == null) or (searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and pu.pur_date <![CDATA[<=]]> #{searchEndDate}				
+				</if>
+		</where>
+         order by cast(pu.pur_cd as unsigned)	DESC
+         LIMIT #{startPoint}, #{pageSize}
+	
+	</select>
+	
+	
+	
+	<!-- 전체 상품 개수 조회 -->
+	<select id="totalCnt" resultType="int">
+		select Count(pu.pur_cd)
+		  from tb_purchase pu	
+		          inner join tb_product pr on pu.pro_cd = pr.pro_cd
+		          inner join tb_supplier su on pu.sup_cd = su.sup_cd	
+		<where>		   		
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'supplier'">
+							and su.sup_nm LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or su.sup_nm LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+				
+				<if test="(selectedRadio != null) and (!selectedRadio.equals(''))">
+					<choose>
+						<when test="selectedRadio eq 'all'">
+							and pu.pur_appr in ('0', '1', '2', '3')
+						</when>
+						<when test="selectedRadio eq 'unAppr'">
+							and pu.pur_appr = '0'
+						</when>
+						<when test="selectedRadio eq 'appr'">
+							and pu.pur_appr = '1'
+						</when>
+						<when test="selectedRadio eq 'deposit'">
+							and pu.pur_appr = '2'
+						</when>						
+						<when test="selectedRadio eq 'stock'">
+							and pu.pur_appr = '3'
+						</when>
+					</choose>
+				</if>
+				
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and pu.pur_date between #{searchStartDate} and #{searchEndDate}				
+				</if>
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate == null) or (searchEndDate.equals('')))">
+					and pu.pur_date >= #{searchStartDate}			
+				</if>
+				<if test="((searchStartDate == null) or (searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and pu.pur_date <![CDATA[<=]]> #{searchEndDate}				
+				</if>
+		</where>
+	</select>
+	
+	
+	<!-- 발주 정보 한건 가져오기 (발주 한건에 대한 모든 정보) -->
+	<select id="selectScmPurchase" resultType="kr.happyjob.study.scm.model.ScmPurchaseModel">
+		
+		select pu.pur_cd,		 <!-- 발주 코드 -->
+	              pu.pro_cd,		 <!-- 상품 코드 -->
+	              pr.pro_nm,	 <!-- 상품명 -->
+	              pr.pro_unit_price,		 <!-- 납품 단가 -->
+	              pu.pur_cnt,		 <!-- 발주 수량 -->
+	              pu.pur_total_unit_price,		 <!-- 총 납품액 -->
+	              su.sup_cd,		 <!-- 납품 업체 코드 -->
+	              su.sup_nm,		 <!-- 납품 업체명 -->
+	              pu.pur_appr,		 <!-- 발주 승인 -->
+	              a.name as pur_nm1,		 <!-- 발주자 이름 -->	
+	              pu.pur_date,		 <!-- 발주 일자 -->	
+	              b.name as admin_nm,		 <!-- 승인자 이름 -->
+	              pu.pur_appr_date,		 <!-- 승인 일자 -->
+	              c.name as pur_nm2,		 <!-- 구매 담당 이름 -->
+	              pu.pur_dps_date, 		 <!-- 입금 일자 -->
+	              d.name as del_nm,		 <!-- 배송 담당 이름 -->
+	              pu.pur_stk_date,		 <!-- 입고 일자 -->
+	              pu.pur_stk_cnt,		 <!-- 입고 수량 -->
+	              pr.pro_stock		 <!-- 재고 -->
+	      from tb_purchase pu
+	              inner join tb_product pr on pu.pro_cd = pr.pro_cd
+	              inner join tb_supplier su on pu.sup_cd = su.sup_cd
+	              inner join (select name, loginid from tb_userinfo) a on a.loginid = pu.loginid
+	              left join (select name, loginid from tb_userinfo) b on b.loginid = pu.pur_admin
+	              left join (select name, loginid from tb_userinfo) c on c.loginid = pu.pur_pur
+	              left join (select name, loginid from tb_userinfo) d on d.loginid = pu.pur_del
+	      where pu.pur_cd = #{pur_cd}    
+		
+	</select>
+	
+		
+</mapper>

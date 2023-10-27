@@ -1,0 +1,185 @@
+package kr.happyjob.study.mngins.controller;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+   
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.common.comnUtils.ComnCodUtil;
+import kr.happyjob.study.mngadm.model.LectureModel;
+import kr.happyjob.study.mngins.model.AdviceModel;
+import kr.happyjob.study.mngins.service.AdviceMngService;
+
+
+@Controller
+@RequestMapping("/tut/")
+public class AdviceMngController {
+	
+	@Autowired
+	AdviceMngService adviceMngService;
+	
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+	
+	
+	/**
+	 * 상담 초기 화면
+	 */
+	@RequestMapping("advice.do")
+	public String adviceMng(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".adviceMng");
+		logger.info("   - paramMap : " + paramMap);
+		
+		logger.info("+ End " + className + ".adviceMng");
+
+		
+		paramMap.put("loginid", session.getAttribute("loginId") );
+		
+		return "mngins/adviceMng";
+	}
+	
+	
+	/**
+	 * 상담 목록
+	 */
+	@RequestMapping("adviceList.do")
+	public String adviceList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".adviceList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		int totalcnt = adviceMngService.totalcnt(paramMap);
+		
+		List<AdviceModel> adviceList = adviceMngService.adviceList(paramMap);
+		
+		model.addAttribute("adviceList", adviceList);
+		model.addAttribute("totalcnt", totalcnt);
+		
+		logger.info("+ End " + className + ".adviceList");
+
+		return "mngins/adviceList";
+
+	}
+	
+
+
+	/**
+	 * 상담 내용 조회
+	 */
+	@ResponseBody
+	@RequestMapping("selectAdv.do")
+	public Map<String, Object> selectAdv(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception{
+		
+		logger.info("+ Start " + className + ".selectAdv");
+		logger.info("   - paramMap : " + paramMap);
+		
+		paramMap.put("loginid", session.getAttribute("loginId") );
+		
+		AdviceModel advModel = adviceMngService.selectAdv(paramMap);
+		
+		Map<String, Object> returnmap = new HashMap<>();
+		
+		returnmap.put("advModel", advModel);
+		
+		logger.info("+ End " + className + ".selectAdv");
+		
+		return returnmap;
+		
+	}
+	
+	
+	
+	/*
+	*//** 
+	 * 상담 저장하기
+	 *//*
+	@ResponseBody
+	@RequestMapping("saveAdv.do")
+	public Map<String, Object> saveAdv(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".saveAdv");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		
+		
+		String action = paramMap.get("action").toString();
+		String msg = null;
+		
+		
+		if(action.equals("I")){
+			msg = adviceMngService.insertAdv(paramMap);
+		} else if(action.equals("U")){
+			msg = adviceMngService.updateAdv(paramMap);
+		} else if(action.equals("D")){
+			msg = adviceMngService.deleteAdv(paramMap);
+		}
+		
+		
+		logger.info("+ End " + className + ".saveAdv");
+		
+		Map<String, Object> returnmap = new HashMap<>();
+		
+		returnmap.put("msg", msg);
+		
+		return returnmap;
+	}
+	*/
+	
+
+	/**
+	 * 학생 목록 조회
+	 */
+	@ResponseBody
+	@RequestMapping("stdList.do")
+	public List<Map> stdList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception{
+		
+		logger.info("+ Start " + className + ".stdList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		List<Map> stdList = adviceMngService.stdList();
+		
+		logger.info("+ End " + className + ".stdList");
+		
+		return stdList;
+		
+	}
+	
+	
+	
+}

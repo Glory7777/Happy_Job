@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.pcm.dao.PcmRefundDirectionDao">
+
+	<!-- 반품지시서 목록 조회 -->
+	<select id="pcmRefundDirectionList" resultType="kr.happyjob.study.pcm.model.PcmRefundDirectionModel">
+		/*kr.happyjob.study.pcm.dao.pcmRefundDirectionList*/
+		select ref.refund_cd
+		        , ord.loginid
+		        , pro.pro_nm
+		        , ord.order_date
+		        , ref.refund_date
+		        , ref.refund_st
+		        , ord.order_cd
+		        , user.bank_cd
+		        , user.account_num
+		        , ref.refund_cnt
+		        , ref.refund_price
+		        , ref.refund_text
+		from tb_refund ref
+			inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+			inner join tb_order ord on(ref.pro_cd = ord.pro_cd and ref.order_cd = ord.order_cd)
+      		inner join tb_userinfo user on(ord.loginid = user.loginid)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'refundUserNm'.toString()">
+						and ord.loginid like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'proNm'.toString()">
+						and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+								ord.loginid like CONCAT('%', #{searchText}, '%')
+						         or pro.pro_nm like CONCAT('%', #{searchText}, '%')
+							)
+					</otherwise>
+				</choose>
+			</if>
+			
+<!-- 			<if test="(selectedRadio != null) and (!selectedRadio.equals(''))"> -->
+<!-- 				<choose> -->
+<!-- 					<when test="selectedRadio eq 'confirm'.toString()"> -->
+<!-- 						and ref.refund_st = 1 -->
+<!-- 					</when> -->
+<!-- 					<when test="selectedRadio eq 'notConfirm'.toString()"> -->
+<!-- 						and ref.refund_st = 0 -->
+<!-- 					</when> -->
+<!-- 					<when test="selectedRadio eq 'stockPlus'.toString()"> -->
+<!-- 						and ref.refund_st = 2 -->
+<!-- 					</when> -->
+<!-- 					<otherwise> -->
+<!-- 						and ref.refund_st = 3 -->
+<!-- 					</otherwise> -->
+<!-- 				</choose> -->
+<!-- 			</if> -->
+		</where>
+		order by CAST(ref.refund_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+	<!-- 반품지시서 전체 갯수 조회 -->
+	<select id="totalList" resultType="int">
+		/*kr.happyjob.study.pcm.dao.totalList*/
+		select count(ref.refund_cd)
+		from tb_refund ref
+			inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+			inner join tb_order ord on(ref.pro_cd = ord.pro_cd and ref.order_cd = ord.order_cd)
+      		inner join tb_userinfo user on(ord.loginid = user.loginid)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'refundUserNm'.toString()">
+						and ord.loginid like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'proNm'.toString()">
+						and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+								ord.loginid like CONCAT('%', #{searchText}, '%')
+						         or pro.pro_nm like CONCAT('%', #{searchText}, '%')
+							)
+					</otherwise>
+				</choose>
+			</if>
+			
+<!-- 			<if test="(selectRadio != null) and (!selectRadio.equals(''))"> -->
+<!-- 				<choose> -->
+<!-- 					<when test="selectRadio eq 'confirm'.toString()"> -->
+<!-- 						and ref.refund_st = 1 -->
+<!-- 					</when> -->
+<!-- 					<when test="selectRadio eq 'notConfirm'.toString()"> -->
+<!-- 						and ref.refund_st = 0 -->
+<!-- 					</when> -->
+<!-- 					<when test="selectRadio eq 'stockPlus'.toString()"> -->
+<!-- 						and ref.refund_st = 2 -->
+<!-- 					</when> -->
+<!-- 					<otherwise> -->
+<!-- 						and ref.refund_st = 3 -->
+<!-- 					</otherwise> -->
+<!-- 				</choose> -->
+<!-- 			</if> -->
+		</where>
+	</select>
+	
+ 		<!-- 반품지시서 목록 조회 --> 
+	<select id="pcmRadioRefDirecList" resultType="kr.happyjob.study.pcm.model.PcmRefundDirectionModel">
+		/*kr.happyjob.study.pcm.dao.pcmRadioRefDirecList*/
+		select ref.refund_cd
+		        , ord.loginid
+		        , pro.pro_nm
+		        , ord.order_date
+		        , ref.refund_date
+		        , ref.refund_st
+		        , ord.order_cd
+		        , user.bank_cd
+		        , user.account_num
+		        , ref.refund_cnt
+		        , ref.refund_price
+		        , ref.refund_text
+		from tb_refund ref
+			inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+			inner join tb_order ord on(ref.pro_cd = ord.pro_cd and ref.order_cd = ord.order_cd)
+      		inner join tb_userinfo user on(ord.loginid = user.loginid)
+		<where>
+			<if test="(selectedRadio != null) and (!selectedRadio.equals(''))">
+				<choose>
+					<when test="selectedRadio eq 'confirm'.toString()">
+						and ref.refund_st = 1
+					</when>
+					<when test="selectedRadio eq 'notConfirm'.toString()">
+						and ref.refund_st = 0
+					</when>
+					<when test="selectedRadio eq 'stockPlus'.toString()">
+						and ref.refund_st = 2
+					</when>
+					<otherwise>
+						and ref.refund_st = 3
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		order by CAST(ref.refund_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+ 	<!-- 반품지시서 전체 갯수 조회 -->
+	<select id="totalRadioList" resultType="int">
+		/*kr.happyjob.study.pcm.dao.totalRadioList*/
+		select count(ref.refund_cd)
+		from tb_refund ref
+			inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+			inner join tb_order ord on(ref.pro_cd = ord.pro_cd and ref.order_cd = ord.order_cd)
+      		inner join tb_userinfo user on(ord.loginid = user.loginid)
+		<where>
+			<if test="(selectedRadio != null) and (!selectedRadio.equals(''))">
+				<choose>
+					<when test="selectedRadio eq 'confirm'.toString()">
+						and ref.refund_st = 1
+					</when>
+					<when test="selectedRadio eq 'notConfirm'.toString()">
+						and ref.refund_st = 0
+					</when>
+					<when test="selectedRadio eq 'stockPlus'.toString()">
+						and ref.refund_st = 2
+					</when>
+					<otherwise>
+						and ref.refund_st = 3
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</select>
+	
+</mapper>

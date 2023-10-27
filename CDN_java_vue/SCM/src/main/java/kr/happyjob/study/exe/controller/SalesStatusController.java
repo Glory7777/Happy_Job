@@ -1,0 +1,143 @@
+package kr.happyjob.study.exe.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.exe.model.SalesStatusModel;
+import kr.happyjob.study.exe.service.SalesStatusService;
+
+@Controller
+@RequestMapping("/exe/")
+public class SalesStatusController {
+	
+	@Autowired
+	SalesStatusService service;
+	
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+	
+
+	/**
+	 * 매출현황 조회페이지
+	 */
+	@RequestMapping("salesStatusvue.do")
+	public String salesStatusvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".salesStatusvue");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".salesStatusvue");
+		
+		return "exe/vueSalesStatusMgr";
+	}
+	
+
+	/**
+	 * 매출현황 리스트 조회
+	 */
+	@RequestMapping("salesStatusListvue.do")
+	@ResponseBody
+	public Map<String,Object> salesStatusListvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".salesStatusListvue");
+		logger.info("   - paramMap : " + paramMap);
+		
+
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		/*
+		logger.info(paramMap.get("startDate"));
+		logger.info(paramMap.get("endDate"));*/
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		Map<String,Object> resultMap = new HashMap<String,Object>();
+		
+		List<SalesStatusModel> ssList = service.ssList(paramMap);
+		int totalCnt = service.ssTotal(paramMap);
+	
+		resultMap.put("ssList",ssList);
+		resultMap.put("totalCnt",totalCnt);
+		
+		logger.info("+ End " + className + ".salesStatusListvue");
+		
+		return resultMap;
+	}
+	
+	
+//============================================
+	
+	
+	
+	/**
+	 * 매출현황 조회페이지
+	 */
+	@RequestMapping("salesStatus.do")
+	public String salesStatus(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".salesStatus");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".salesStatus");
+		
+		return "exe/salesStatusMgr";
+	}
+	
+
+	/**
+	 * 납품업체 관리페이지
+	 */
+	@RequestMapping("salesStatusList.do")
+	public String salesStatusList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".salesStatusList");
+		logger.info("   - paramMap : " + paramMap);
+		
+
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		/*
+		logger.info(paramMap.get("startDate"));
+		logger.info(paramMap.get("endDate"));*/
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		
+		List<SalesStatusModel> ssList = service.ssList(paramMap);
+		int totalCnt = service.ssTotal(paramMap);
+	
+		model.addAttribute("ssList",ssList);
+		model.addAttribute("totalCnt",totalCnt);
+		
+		logger.info("+ End " + className + ".salesStatusList");
+		
+		return "exe/salesStatusList";
+	}
+	
+
+
+}

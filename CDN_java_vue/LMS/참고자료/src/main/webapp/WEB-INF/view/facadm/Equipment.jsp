@@ -1,0 +1,750 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>장비관리</title>
+<!-- sweet alert import -->
+<script src='${CTX_PATH}/js/sweetalert/sweetalert.min.js'></script>
+<jsp:include page="/WEB-INF/view/common/common_include.jsp"></jsp:include>
+<!-- sweet swal import -->
+
+<script type="text/javascript">
+	
+	// 1. 페이징 설정 
+	var pageSize = 5;    	// 화면당 데이터 수 
+	var pageBlock = 5;		// 하단 메뉴에 보이는 페이지 수
+	
+
+	
+	/* 2. html을 한번 읽고 함수 실행 */
+	$(function(){
+/* 		 콤보박스 있을 경우 사용 
+		 comcombo("delCD", "searchdel", "all", ""); 콤보박스 띄우기(공통코드명, 셀렉테그ID, 전체?, 초기값) */
+		 
+		// 3. 장비 조회 
+		fnSearchList();
+		
+		// 버튼 이벤트 등록 (저장, 수정, 삭제, 모달창 닫기)
+		fRegisterButtonClickEvent();
+	});
+	
+	/* 버튼 이벤트 등록 - 저장, 수정, 삭제  */
+	function fRegisterButtonClickEvent(){
+		$('a[name=btn]').click(function(e){ // a테그중 name에 btn들어가는 것을 클릭하였을 때
+			e.preventDefault(); // 이벤트의 초기값 초기화
+					
+			var btnId = $(this).attr('id'); // btnId는 해당태그의 id속성의 값을 가진다
+			
+			//alert("btnId : " + btnId);
+			
+			switch(btnId){
+			case 'btnSave' : fnSave(); //  저장
+							if($("#action").val() == "I") {
+								fnSearchList();
+							} else if($("#action").val() == "U") {
+								fnSearchList($("#currentPage").val());
+							} else if($("#action").val() == "D") {
+								fnSearchList();
+							}
+				break;
+			case 'btnDelete' : fnDelete();	// 삭제
+				break;
+			case 'btnUpdate' : fnUpdate();  // 수정하기
+				break;
+			case 'btnSaveDtl' : fnSaveDtl();  //  내역저장
+								if($("#action").val() == "I") {
+									fnSearchList();
+								} else if($("#action").val() == "U") {
+									fnSearchList($("#currentPage").val());
+								} else if($("#action").val() == "D") {
+									fnSearchList();
+								}
+				break;
+			case 'btnDeleteDtl' : fnDeleteDtl();	// 내역삭제
+				break;
+			case 'btnUpdateDtl' : fnUpdateDtl();  // 내역수정하기
+				break;
+			case 'btnCloseDtl' : 
+			case 'btnClose' : gfCloseModal();  // 모달닫기 
+
+				break;
+				
+			//case 'commentWrite' : fCommentInsert();   // 댓글--> 답변글로 변경 // 저장 
+				//break;
+			}
+		});
+	}
+	
+	/* 4. 공지사항 리스트 불러오기  */
+	function fnSearchList(currentPage){
+		
+		currentPage = currentPage || 1;   //  || = or 현재 페이지를 1로 설정
+		
+	//alert("현재 페이지 : " + currentPage);
+		
+		
+		// 4-1. 각각의 변수들을 param에 넣습니다. 변수 설명은 아래 참조
+    	var param = {
+    			pageSize : pageSize, // 제일 위에 1에서 설정함 1페이지에 나타내야하는 게시글 숫자
+    			currntPage : currentPage, // 현재 페이지는 초기 1 Ajax 통신을 통해 페이지 변경시 변하게됨
+    			searchSel : $("#searchSel").val(), // searchsel id에 있는 value값
+    			searchText : $("#searchText").val(),
+    			searchDel : $("#searchDel").val()
+    	}
+
+		
+    	var listCallBack = function(returnData) {
+    		console.log(returnData);
+
+    		$("#equList").empty().append(returnData);
+    		
+    		console.log($("#totalCnt").val());
+
+    		var totalCnt = $("#totalCnt").val();
+    		
+    		var paginationHtml = getPaginationHtml(currentPage, totalCnt, pageSize, pageBlock, 'fnSearchList');
+    		console.log("paginationHtml : " + paginationHtml);
+    		//swal(paginationHtml);
+    		$("#pagingnavi").empty().append( paginationHtml );
+    		
+    		// 현재 페이지 설정
+    		$("#currentPage").val(currentPage);
+		}
+		//5. param에 정보들을 모아모아 control에 있는 listequ로 보내고, listcallback으로 다시 받음
+    	callAjax("/adm/listEqu.do", "post", "text", true, param, listCallBack);
+		
+	}
+	//
+    function fnOpenPopUp() {
+    	
+    	fnPopUpInt();
+    	
+		// 모달 팝업
+		gfModalPop("#equPop");
+		
+    }
+	//셀렉트 모달 / 변수 적용
+    function fnSelectEqu(equ_cd) {
+    	
+    	var param = {
+    			equ_cd : equ_cd,
+    			
+    	}
+    	
+    	var selectCallBack = function(returnData) {
+    		console.log(JSON.stringify(returnData));  
+    		console.log(returnData.sectInfo);
+    		
+    		fnPopUpInt(returnData.sectInfo);
+    		
+    		gfModalPop("#equPop");
+    	}
+    	
+    	callAjax("/adm/selectEqu.do", "post", "json", true, param, selectCallBack);
+    	
+    }
+    
+    //////셀렉트 모달의 실행함수 정의
+    function fnPopUpInt(data) {
+
+    	if(data == null || data == undefined || data == "") {
+        	$("#selequcd").val(""); // 선택코드
+        	
+        	$("#equ_nm").val(""); // 장비명
+        	$("#equ_etc").val(""); // 비고
+        	$("#equ_total_cnt").val(""); // 총 개수
+        	
+        	$("#action").val("I"); 
+        	
+        	$("#equ_unable_cnt").val(0).attr("readonly", true).css("background-color", "#f0f0f0"); // 사용 불가
+        	$("#equ_use_cnt").val("").attr("readonly", true).css("background-color", "#f0f0f0");  // 사용 중
+        	$("#equ_able_cnt").val("").attr("readonly", true).css("background-color", "#f0f0f0");  // 사용 가능
+        	
+        	$("#btnDelete").hide();   		
+    	}  else {
+    		function updateAbleCnt() {
+    	        var totalCnt = parseInt($("#equ_total_cnt").val()) || 0;
+    	        var useCnt = parseInt($("#equ_use_cnt").val()) || 0;
+    	        var unableCnt = parseInt($("#equ_unable_cnt").val()) || 0;
+    	        
+    	        $("#equ_able_cnt").val(totalCnt - useCnt - unableCnt).attr("readonly", true).css("background-color", "#f0f0f0");
+    	    }
+
+    	    $("#equ_total_cnt, #equ_unable_cnt").change(function() {
+    	        updateAbleCnt();
+    	    });	
+        	$("#selequcd").val(data.equ_cd);  // 선택코드
+
+        	$("#equ_nm").val(data.equ_nm); // 장비명
+        	$("#equ_etc").val(data.equ_etc); // 비고
+        	$("#equ_total_cnt").val(data.equ_total_cnt); // 총 개수
+
+    		$("#action").val("U");  
+        	
+    		$("#equ_unable_cnt").val(data.equ_unable_cnt).attr("readonly", false).css("background-color", "#ffffff");; // 사용 불가
+        	$("#equ_use_cnt").val(data.equ_use_cnt).attr("readonly", true).css("background-color", "#f0f0f0"); // 사용 중
+        	$("#equ_able_cnt").val(data.equ_able_cnt).attr("readonly", true).css("background-color", "#f0f0f0"); // 사용 가능
+        	
+        	
+        	
+        	$("#btnDelete").show();
+    	}   	
+
+    }
+
+    // 세이브 버튼을 누르면 발동! 세이브 버튼은 fnPopUpInt 모달안에 있으므로 해당 모달에 붙어있다고 보면된다.
+	function fnSave() {
+    	
+    	if(!fnValidate()) { //값을 다 넣었는지??
+    		return;
+    	}
+    	
+    	var param = { //컨트롤로 넘길 정보 목록들
+    			action : $("#action").val(), 
+    			equ_cd : $("#selequcd").val(),
+    			equ_nm : $("#equ_nm").val(),
+    			equ_etc : $("#equ_etc").val(),
+    			equ_total_cnt : $("#equ_total_cnt").val(),
+    			equ_unable_cnt : $("#equ_unable_cnt").val(),
+    			equ_use_cnt : $("#equ_use_cnt").val(),
+     			equ_able_cnt : $("#equ_able_cnt").val(), 
+    	}
+    	
+    	var saveCallBack = function(returnValue) {
+    		console.log(JSON.stringify(returnValue));
+    		
+    		if(returnValue.resultMsg == "저장" || returnValue.resultMsg == "수정" || returnValue.resultMsg == "삭제") {
+    			alert(returnValue.resultMsg +" 되었습니다.");
+    			gfCloseModal();
+    			if($("#action").val() == "I") {
+    				fnSearchList();
+    			} else if($("#action").val() == "U") {
+    				fnSearchList($("#currentPage").val());
+    			} else if($("#action").val() == "D") {
+    				fnSearchList($("#currentPage").val());
+    			}
+    		}
+    		
+    	}
+    	
+    	callAjax("/adm/equSave.do", "post", "json", true, param, saveCallBack);
+    }
+	/** 저장 validation */
+	function fnValidate() {
+
+		var chk = checkNotEmpty(
+				[
+						[ "equ_nm", "장비명을 입력해 주세요." ]
+					,	[ "equ_total_cnt", "총 수량을 입력해 주세요" ]				]
+		);
+
+		if (!chk) {
+			return;
+		}
+
+		return true;
+	}
+	
+    function fnDelete() {
+    	$("#action").val("D"); 
+    	fnSave();
+    } 
+    
+    
+///////////////////////////////하단 모달 작업 앞에 dtl또는 Dtl넣어서 구분 ///////////////////////////////////////////////////////////////
+	/** 상세코드 목록 조회 */
+	var pageSizeDtl = 5;    // 내역 데이터 수
+	var pageBlockDtl = 5;   // 내역 페이지 수
+ 	function fnListEquDtl(currentPage, equ_cd, equ_nm, equ_able_cnt) {
+		
+		currentPage = currentPage || 1;
+
+		// 장비코드 정보 설정
+		$("#tmpEquCd").val(equ_cd);
+		$("#tmpEquNm").val(equ_nm);
+		$("#tmpAbleCnt").val(equ_able_cnt);
+		
+		var param = {
+					equ_cd : equ_cd
+				,	currentPage : currentPage
+				,	pageSize : pageSizeDtl
+		}
+		console.log(param);
+		var resultCallback = function(data) {
+			fnListDtlResult(data, currentPage);
+		};
+		
+		callAjax("/adm/listEquDtl.do", "post", "text", true, param, resultCallback);
+	}
+	
+	
+	/** 상세코드 조회 콜백 함수 **/
+	function fnListDtlResult(data, currentPage) {
+		
+		// 기존 목록 삭제
+		$('#listEquDtl').empty(); 
+		
+		var $data = $( $(data).html() );
+
+		// 신규 목록 생성
+		var $listEquDtl = $data.find("#listEquDtl");		
+		$("#listEquDtl").append($listEquDtl.children());
+		
+		// 총 개수 추출
+		var $totalCntEquDtl = $data.find("#totalCntEquDtl");
+		var totalCntEquDtl = $totalCntEquDtl.text(); 
+		
+		// 페이지 네비게이션 생성
+		var equ_cd = $("#tmpEquCd").val();
+		var equ_nm = $("#tmpEquNm").val();
+		var paginationHtml = getPaginationHtml(currentPage, totalCntEquDtl, pageSizeDtl, pageBlockDtl, 'fnListEquDtl', [equ_cd]);
+		$("#equDtlpagingnavi").empty().append( paginationHtml );
+		
+		// 현재 페이지 설정
+		$("#currentPageDtl").val(currentPage);
+	} 
+	
+	/** 상세코드 단건 조회 */
+    function fnOpenPopUpDtl() {
+    	if($("#tmpEquCd").val() == null || $("#tmpEquCd").val() == undefined || $("#tmpEquCd").val() == "") {
+    		alert("장비를 선택해주세요")
+    	}else{
+    	fnPopUpInitDtl();
+    	
+		// 모달 팝업
+		gfModalPop("#equDtlPop");
+    	}
+    }
+	// 내역 셀리트 모달 적용
+	function fnSelectDtl(equ_cd, cls_room_cd) {
+
+		var param = {
+				    equ_cd : equ_cd
+				,	cls_room_cd : cls_room_cd
+		};
+		
+		var resultCallback = function(returnData) {
+    		console.log(JSON.stringify(returnData));  
+    		console.log(returnData.sectInfoD);
+			fnPopUpInitDtl(returnData.sectInfoD);
+			
+			gfModalPop("#equDtlPop")
+		};
+		
+		callAjax("/adm/selectEquDtl.do", "post", "json", true, param, resultCallback);
+	}
+
+	
+
+    //////셀렉트 모달의 실행함수 정의
+    function fnPopUpInitDtl(data) {
+    	
+    	$("#totalUse").val(Number($("#tmpAbleCnt").val()) + Number($("#originUse").val()));
+    	
+    	
+    	var inhtml = "";
+
+    	if(data == null || data == undefined || data == "") {
+    		$("#dtl_equ_cd").val($("#tmpEquCd").val()).attr("readonly", true).css("background-color", "#f0f0f0"); // 장비코드
+    		$("#dtl_equ_nm").val($("#tmpEquNm").val()).attr("readonly", true).css("background-color", "#f0f0f0"); // 장비명
+    		$("#dtl_able_cnt").val($("#tmpAbleCnt").val()).attr("readonly", true).css("background-color", "#f0f0f0"); // 사용가능 개수
+
+        	// $("#cls_room_nm").val(""); // 강의실명
+        	$("#etc").val(""); // 비고
+        	$("#use_cnt").val(""); // 사용 개수
+        	
+        	$("#action").val("I"); 
+        	
+        	$("#btnDelete").hide();   		
+        	
+        	// 강의실 목록은 신규와 수정이 나타나는 게 다르기 때문에 직접 insert해줌
+        	inhtml = "<select id='cls_room_cd' name='cls_room_cd'  onChange='javascript:fnDupRoomCheck()'></select>";
+        	
+        	$("#divroom").empty().append(inhtml);
+        	selectComCombo("cls","cls_room_cd","sel","","");
+
+
+        	
+    	}  else {
+    		// 강의실 목록은 신규와 수정이 나타나는 게 다르기 때문에 직접 insert해줌, 수정에서는 css의 readonly 속성 설정으로 인해 먼저 만들어줌
+    		inhtml = "<input type='text' class='inputTxt p100' id='cls_room_nm' name='cls_room_nm' /><input type='hidden' id='cls_room_cd' name='cls_room_cd' />";
+            	
+        	$("#divroom").empty().append(inhtml);
+    		
+    		$("#dtl_equ_cd").val(data.equ_cd).attr("readonly", true).css("background-color", "#f0f0f0"); // 장비코드
+    		$("#dtl_equ_nm").val(data.equ_nm).attr("readonly", true).css("background-color", "#f0f0f0"); // 장비명
+    		$("#dtl_able_cnt").val(data.equ_able_cnt+data.use_cnt).attr("readonly", true).css("background-color", "#f0f0f0"); // 사용가능 개수(기존 사용가능개수 + 기존 사용개수)
+    		$("#originUse").val(data.use_cnt); // 기존 사용개수
+    		$("#cls_room_nm").val(data.cls_room_nm).attr("readonly", true).css("background-color", "#f0f0f0"); // 사용가능 개수
+    		$("#cls_room_cd").val(data.cls_room_cd)
+        	$("#etc").val(data.etc); // 비고
+        	$("#use_cnt").val(data.use_cnt); // 사용 개수
+
+    		$("#action").val("U");  
+        	
+        	
+    		
+    		
+        	$("#btnDelete").show();
+    	}   	
+
+    }	
+    
+	function fnSaveDtl() {
+    	
+    	if(!fnValidateDtl()) { //값을 다 넣었는지??
+    		return;
+    	}
+
+    	var param = { //컨트롤로 넘길 정보 목록들
+    			action : $("#action").val(), 
+    			equ_cd : $("#dtl_equ_cd").val(),
+    			equ_nm : $("#dtl_equ_nm").val(),
+    			cls_room_nm : $("#cls_room_nm").val(),
+    			cls_room_cd : $("#cls_room_cd").val(),
+    			etc : $("#etc").val(),
+    			use_cnt : $("#use_cnt").val(),
+    			equ_able_cnt : $("#dtl_able_cnt").val(),
+    			orginUse : $("#originUse").val(),
+    	};
+    	
+    	var saveCallBack = function(returnValue) {
+    		console.log(JSON.stringify(returnValue));
+    		
+    		if(returnValue.resultMsg == "저장" || returnValue.resultMsg == "수정" || returnValue.resultMsg == "삭제") {
+    			alert(returnValue.resultMsg +" 되었습니다.");
+    			gfCloseModal();
+    			if($("#action").val() == "I") {
+    				fnSearchList();
+    			} else if($("#action").val() == "U") {
+    				fnSearchList($("#currentPage").val());
+    			} else if($("#action").val() == "D") {
+    				fnSearchList($("#currentPage").val());
+    			}
+    		}
+    		
+    	}
+    	
+    	callAjax("/adm/equDtlSave.do", "post", "json", true, param, saveCallBack);
+    }
+	/** 저장 validation */
+	function fnValidateDtl() {
+
+		var chk = checkNotEmpty(
+				[
+						[ "cls_room_cd", "강의실을 선택해 주세요." ]
+					,	[ "use_cnt", "사용 수량을 입력해 주세요" ]				]
+		);
+
+		if (!chk) {
+			return;
+		}
+
+		return true;
+	}
+	
+    function fnDeleteDtl() {
+    	$("#action").val("D"); 
+    	fnSaveDtl();
+    } 
+    
+    
+    function fnDupRoomCheck() {
+    	
+    	var param = {
+    			cls_room_cd : $("#cls_room_cd").val(),
+    			equ_cd : $("#tmpEquCd").val()
+    	}
+		var resultCallback = function(returnData) {
+    		console.log(JSON.stringify(returnData));  
+    		console.log(returnData.dupYN);
+			if(returnData.dupYN == '1') {
+				alert("이미 강의실에 장비가 있습니다. 확인 후 수정해주세요.")
+				$("#cls_room_cd").val('')
+			}
+		};
+		
+		callAjax("/adm/dupRoomCheck.do", "post", "json", true, param, resultCallback);
+    }
+</script>
+
+
+</head>
+<body>
+	<!-- ///////////////////// html 페이지  ///////////////////////////// -->
+
+<form id="myForm" action="" method="">
+	
+	<input type="hidden" id="currentPage" value="1">  <!-- 현재페이지는 처음에 항상 1로 설정하여 넘김  -->
+	<input type="hidden" id="currentPageDtl" value="1">  <!-- 내역 현재페이지는 처음에 항상 1로 설정하여 넘김  -->
+	  <input type="hidden" id="selequcd"  name="selequcd" /> <!-- 선택글의 코드 -->
+	<input type="hidden" name="action" id="action" value=""> <!-- 뭘 할건지? -->
+	<input type="hidden" name="userType" id="usetType" value=""> <!-- 유저 권한 -->
+	<input type="hidden" id="swriter" value="${loginId}"> <!-- 작성자 session에서 java에서 넘어온값 -->
+	
+	<input type="hidden" id="tmpEquCd" value=""> <!-- 장비코드 -->
+	<input type="hidden" id="tmpEquNm" value=""> <!-- 장비명-->
+	<input type="hidden" id="tmpAbleCnt" value=""> <!-- 장비사용 가능 갯수-->
+	<input type="hidden" id="originUse" value=""> <!-- 장비사용 원래 갯수 -->
+
+	<div id="wrap_area">
+
+		<h2 class="hidden">header 영역</h2>
+		<jsp:include page="/WEB-INF/view/common/header.jsp"></jsp:include>
+
+		<h2 class="hidden">컨텐츠 영역</h2>
+		<div id="container">
+			<ul>
+				<li class="lnb">
+					<!-- lnb 영역 --> 
+					<jsp:include page="/WEB-INF/view/common/lnbMenu.jsp"></jsp:include> <!--// lnb 영역 -->
+				</li>
+				<li class="contents">
+					<!-- contents -->
+					<h3 class="hidden">contents 영역</h3> <!-- content -->
+					<div class="content">
+
+						<p class="Location">
+							<a href="../dashboard/dashboard.do" class="btn_set home">메인으로</a>
+							<span class="btn_nav bold"> 시설 관리 </span> 
+							<span class="btn_nav bold"> 장비 관리 </span> 
+							<a href="/adm/equipmentControl.do" class="btn_set refresh">새로고침</a>
+						</p>
+
+						<p class="conTitle">
+							<span>장비 관리</span> 
+							<span class="fr"> 	
+							    <select id="searchSel" name="searchSel">
+							         <option value="">전체</option>
+							         <option value="title">제목</option>
+							    </select>
+							    <input type="text" id="searchText" name="searchText"  style="width: 150px; height: 25px;" />
+							    <a class="btnType blue" href="javascript:fnSearchList();" name="modal"><span>검색</span></a>
+							    <c:if test="${userType eq 'B' || userType eq 'C'}" >
+							    	<a class="btnType blue" href="javascript:fnOpenPopUp();" name="modal"><span>신규등록</span></a>
+							    </c:if>
+							</span>
+						</p>
+
+						
+						<div class="divEquList">
+							<table class="col">
+								<caption>caption</caption>
+	
+		                            <colgroup>
+						                   <col width="10%">
+						                   <col width="20%">
+						                    <col width="10%">
+						                    <col width="10%">
+						                    <col width="10%">
+						                    <col width="10%">
+						                   <col width="25%">
+						                   <col width="5%">
+					                 </colgroup>
+								<thead>
+									<tr>
+							              <th scope="col">장비 코드</th>
+							              <th scope="col">장비 명</th>
+							              <th scope="col">총 갯수</th>
+							              <th scope="col">사용 중</th>
+							              <th scope="col">사용불가</th>
+							              <th scope="col">사용가능</th>
+							              <th scope="col">비고</th>
+							              <th scope="col">수정</th>
+							              
+									</tr>
+								</thead>
+								<tbody id="equList"></tbody>
+							</table>
+							
+							<!-- 페이징 처리  -->
+							<div class="paging_area" id="pagingnavi">
+							</div>
+											
+						</div>
+					
+
+			<p class="conTitle mt50">
+				<span>장비 배치 내역</span> 
+				<span class="fr">
+					<a class="btnType blue"  href="javascript:fnOpenPopUpDtl();" name="modal"><span>신규등록</span></a>
+				</span>
+			</p>
+
+		<div class="divComDtlCodList">
+			<table class="col">
+				<caption>caption</caption>
+				<colgroup>
+					<col width="5%">
+					<col width="10%">
+					<col width="15%">
+					<col width="10%">
+					<col width="10%">
+					<col width="20%">
+					<col width="10%">
+				</colgroup>
+
+				<thead>
+					<tr>
+						<th scope="col">순번</th>
+						<th scope="col">장비코드</th>
+						<th scope="col">장비명</th>
+						<th scope="col">강의실</th>
+						<th scope="col">사용갯수</th>
+						<th scope="col">비고</th>
+						<th scope="col">수정</th>
+					</tr>
+				</thead>
+				<tbody id="listEquDtl">
+					<tr>
+						<td colspan="12">장비를 선택해 주세요.</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		
+		<div class="paging_area"  id="equDtlpagingnavi"> </div>
+		</div>
+					<h3 class="hidden">풋터 영역</h3>
+				<jsp:include page="/WEB-INF/view/common/footer.jsp"></jsp:include>
+				</li>
+			</ul>
+		</div>	
+	
+	</div>
+
+
+	<!--// 모달팝업 -->
+	<div id="equPop" class="layerPop layerType2" style="width: 600px;">
+		<dl>
+			<dt>
+				<strong>장비 등록</strong>
+			</dt>
+			<dd class="content">
+				<!-- s : 여기에 내용입력 -->
+				<table class="row">
+					<caption>caption</caption>
+					<colgroup>
+						<col width="120px">
+						<col width="120px">
+						<col width="120px">
+						<col width="120px">
+					</colgroup>
+
+					<tbody>
+						<tr>
+							<th scope="row">총 갯수<span class="font_red">*</span></th>
+							<td id="">
+								<input type="text" class="inputTxt p100" name="equ_total_cnt" id="equ_total_cnt" />
+							 </td>
+ 							<th scope="row">사용 가능</th>
+							<td>
+								<input type="text" class="inputTxt p100" name="equ_able_cnt" id="equ_able_cnt" />
+							 </td>
+						</tr>
+						<tr>
+							<th scope="row">사용 중</th>
+							<td>
+								<input type="text" class="inputTxt p100" name="equ_use_cnt" id="equ_use_cnt" />
+							 </td>
+							<th scope="row">사용 불가</th>
+							<td>
+								<input type="text" class="inputTxt p100" name="equ_unable_cnt" id="equ_unable_cnt" />
+							 </td>
+						</tr>	
+						<tr>
+							<th scope="row">장비 명 <span class="font_red">*</span></th>
+							<td colspan="3">
+							      <input type="text" class="inputTxt p100" name="equ_nm" id="equ_nm" />
+							 </td>
+						</tr>
+						<tr>
+							<th scope="row">비고내용 <span class="font_red">*</span></th>
+							<td colspan="3">
+							     <textarea name="equ_etc" id="equ_etc"  rows="5" cols="30"  ></textarea>
+						    </td>
+						</tr>
+					</tbody>
+				</table>
+	
+				<!-- e : 여기에 내용입력 -->
+	
+				<div class="btn_areaC mt30">
+						<a href="" class="btnType blue" id="btnSave" name="btn"><span>저장</span></a> 
+						<a href="" class="btnType blue" id="btnDelete" name="btn"><span>삭제</span></a> 
+						<a href=""	class="btnType gray"  id="btnClose" name="btn"><span>취소</span></a>
+				</div>
+			</dd>
+		</dl>
+		<a href="" class="closePop" id="btnClose" name="btn"><span class="hidden">닫기</span></a>
+	</div>
+	<div id="equDtlPop" class="layerPop layerType2" style="width: 600px;">
+		<dl>
+			<dt>
+				<strong>장비 내역 관리</strong>
+			</dt>
+			<dd class="content">
+
+				<!-- s : 여기에 내용입력 -->
+
+				<table class="row">
+					<caption>caption</caption>
+					<colgroup>
+						<col width="120px">
+						<col width="120px">
+						<col width="120px">
+						<col width="120px">
+					</colgroup>
+
+					<tbody>
+						<tr>
+							<th scope="row">장비 코드 <span class="font_red">*</span></th>
+							<td><input type="text" class="inputTxt p100" id="dtl_equ_cd" name="dtl_equ_cd" /></td>
+							<th scope="row">장비 명 <span class="font_red">*</span></th>
+							<td><input type="text" class="inputTxt p100" id="dtl_equ_nm" name="dtl_equ_nm" /></td>
+						</tr>
+						<tr>
+							<th scope="row">사용가능 갯수 <span class="font_red">*</span></th>
+							<td><input type="text" class="inputTxt p100" id=dtl_able_cnt name="dtl_able_cnt" /></td>
+							<th scope="row">강의실 명 <span class="font_red">*</span></th>
+							<td> <div id="divroom"> </div>  </td>
+
+						</tr>
+						<tr>
+							<th scope="row">사용 갯수 <span class="font_red">*</span></th>
+							<td colspan="3">
+							<input type="text" class="inputTxt p100" id="use_cnt" name="use_cnt" />
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">비고</th>
+							<td colspan="3">
+								<input type="text" class="inputTxt p100" id="etc" name="etc" />
+							</td>
+						</tr>
+					
+					</tbody>
+				</table>
+
+				<!-- e : 여기에 내용입력 -->
+
+				<div class="btn_areaC mt30">
+					<a href="" class="btnType blue" id="btnSaveDtl" name="btn"><span>저장</span></a>
+					<a href="" class="btnType blue" id="btnDeleteDtl" name="btn"><span>삭제</span></a>  
+					<a href="" class="btnType gray" id="btnCloseDtl" name="btn"><span>취소</span></a>
+				</div>
+			</dd>
+		</dl>
+		<a href="" class="closePop"><span class="hidden">닫기</span></a>
+	</div>
+	
+
+
+</form>
+
+</body>
+</html>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngadm.dao.AdviceLecDao">
+   
+   	<!-- 강의 상담 목록 -->
+	<select id="lectureAdviceList" resultType="kr.happyjob.study.mngadm.model.AdviceLecModel">
+			SELECT le.lec_cd,
+			       le.lec_nm, 
+			       le.loginID AS ins_id, 
+			       le.lec_start_date,
+			       le.lec_end_date,
+			       ui.name AS ins_nm
+			FROM tb_lec le
+			INNER JOIN tb_userinfo ui ON le.loginID = ui.loginID
+			WHERE le.lec_yn = 'N'
+		 <if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'lectureName'.toString()">
+						and le.lec_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+				
+					<otherwise>
+						and (
+						     le.lec_nm Like CONCAT('%', #{searchText}, '%')
+						      )
+					</otherwise>
+				</choose>
+		 </if>
+ 	  	 order by le.lec_cd ASC
+		 LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	 <!-- 강의  상담 목록 개수 조회 -->
+	<select id="totalcnt" resultType="int">
+		select COUNT(le.lec_cd) AS tot_cnt 
+			FROM tb_lec le
+			INNER JOIN tb_userinfo ui on le.loginID = ui.loginID
+		 <if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'lectureName'.toString()">
+						WHERE le.lec_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+				
+					<otherwise>
+						WHERE (
+						     le.lec_nm Like CONCAT('%', #{searchText}, '%')
+						      )
+					</otherwise>
+				</choose>
+		 </if>
+	</select>
+	
+	
+	<!-- 상담 학생 목록 단건 조회  -->
+	<select id="advStuList" resultType="kr.happyjob.study.mngadm.model.AdvStuListModel">
+		select cs.cst_no,
+		            le.lec_nm,
+		            ui.name as std_nm,
+		            ui.loginID as std_id,
+		            cs.cst_date,
+		            (select name from tb_userinfo ui where ui.loginID = le.loginID) as ins_nm,
+		            le.loginID as ins_id
+		            
+		       from tb_consulting cs
+		            inner join tb_userinfo ui on cs.loginID = ui.loginID
+		            inner join tb_lec le on le.lec_cd = cs.lec_cd
+		      where cs.cst_yn = 'Y'
+		        and cs.cst_delete_yn = 'N'
+		        and le.lec_cd = #{lec_cd}
+		        
+		        <if test="(dsearchText != null) and (!dsearchText.equals(''))">
+		           
+				<choose>
+					<when test="dsearchSel eq 'stuName'.toString()">
+						and ui.name Like CONCAT('%', #{dsearchText}, '%')
+					</when>
+				
+					<otherwise>
+						and ui.name Like CONCAT('%', #{dsearchText}, '%')
+					</otherwise>
+				</choose>
+
+		        </if>
+
+ 	  	 order by cs.cst_no DESC
+		 LIMIT #{startpoint}, #{advPageSize}
+	</select>
+	
+	
+	
+	<!-- 상세페이지 갯수 세기  -->
+	<select id="advTotalcnt" resultType="int">
+	
+	select COUNT(cs.lec_cd) AS advTotalcnt 
+	  from tb_consulting cs
+		   inner join tb_userinfo ui on cs.loginID = ui.loginID
+		   inner join tb_lec le on le.lec_cd = cs.lec_cd
+	 where cs.cst_yn = 'Y'
+	   and cs.cst_delete_yn = 'N'
+	   and le.lec_cd = #{lec_cd} 
+		        <if test="(dsearchText != null) and (!dsearchText.equals(''))">
+		           
+				<choose>
+					<when test="dsearchSel eq 'stuName'.toString()">
+						and ui.name Like CONCAT('%', #{dsearchText}, '%')
+					</when>
+				
+					<otherwise>
+						and ui.name Like CONCAT('%', #{dsearchText}, '%')
+					</otherwise>
+				</choose>
+
+		        </if>
+	</select>
+	
+	
+	
+ 	<!-- 상담목록 수정 조회 -->
+	<select id = "selectAdv" resultType = "kr.happyjob.study.mngadm.model.AdvStuListModel">
+		SELECT cs.cst_no
+		     , le.lec_nm
+		     , ui.name as std_nm
+		     , ui.loginID as std_id
+		     ,  (select name from tb_userinfo ui where ui.loginID = le.loginID) as ins_nm
+		     , le.loginID as ins_id
+             ,  cs.cst_date
+             ,  cs.cls_room
+             , cs.cst_update_date
+             , cs.cst_ctt
+	    from tb_consulting cs
+		inner join tb_userinfo ui on cs.loginID = ui.loginID
+		inner join tb_lec le on le.lec_cd = cs.lec_cd
+	 WHERE cs.cst_no = #{cst_no} 
+	</select> 
+	
+	
+	
+	
+	<!-- 상담 등록 (저장)-->
+	<insert id="insertAdv">
+		<selectKey resultType="string" keyProperty="cst_no" order="BEFORE">
+		    select cast((IFNULL(max(cast(cst_no as unsigned)), 0) + 1) as char(20)) 
+		    from tb_consulting
+		</selectKey>
+
+		INSERT INTO tb_consulting (
+			lec_cd
+		  , cst_no
+		  , loginID
+		  , cst_date
+		  , cls_room
+		  , cst_ctt
+		  , cst_update_date
+		  , cst_yn
+		  , cst_delete_yn
+		) values(
+			  #{lec_cd}
+			, #{cst_no}
+			, #{std_id}
+			, #{cst_date}
+			, #{cls_room}
+			, #{cst_ctt}
+			, #{cst_update_date}
+			, "Y"
+			, "N"
+		)
+		 
+	</insert> 
+	 
+	
+	<!-- 상담 수정  -->
+	<update id="updateAdv">
+		
+		UPDATE tb_consulting 
+		   SET 
+		  	   cst_date = #{cst_date}
+		     , cls_room = #{cls_room}
+		     , cst_ctt = #{cst_ctt}
+		     , cst_update_date = DATE_FORMAT(now(), '%Y-%m-%d')
+		     , cst_yn = "Y"
+		     , cst_delete_yn = "N"
+		 where cst_no = #{cst_no}
+	</update>
+	
+	
+	<!-- 상담 삭제   -->
+	<delete id="deleteAdv">
+		
+		DELETE 
+		  FROM tb_consulting 
+		 WHERE cst_no = #{cst_no};
+	</delete>
+	
+	
+</mapper>
+ 

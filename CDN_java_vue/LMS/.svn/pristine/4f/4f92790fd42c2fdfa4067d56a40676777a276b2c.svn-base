@@ -1,0 +1,20 @@
+package kr.happyjob.study.mngins.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import kr.happyjob.study.mngins.model.GradesMngModel;
+
+
+public interface GradesMngDao {
+
+	// 성적 강의 목록
+	public List<GradesMngModel> gradesList(Map<String, Object> paramMap) throws Exception;
+
+	
+	// 목록 총 갯수
+	public int totalcnt(Map<String, Object> paramMap) throws Exception;
+	
+}

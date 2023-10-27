@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.cus.dao.CartDao">
+
+	<!-- 장바구니 조회 -->
+	<select id="listCart" resultType="kr.happyjob.study.cus.model.CartModel">
+		select pd.pro_cd
+			 , pd.pro_nm
+			 , pd.pro_mfc
+        	 , pd.pro_dt
+			 , pd.pro_sup_price
+        	 , ct.cart_cnt
+        	 , ct.order_hope_date
+       		 , pd.pro_sup_price * ct.cart_cnt AS total_price
+       		 , fi.file_cd
+       		 , fi.logic_path
+       		 , fi.physic_path
+      		 , fi.file_nm
+       		 , fi.file_extention
+       		 , fi.file_size
+		from tb_cart ct inner join tb_product pd on ct.pro_cd = pd.pro_cd
+   			 left outer join tb_file fi on fi.pro_cd = pd.pro_cd
+		order by pro_cd DESC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+
+	<!-- 장바구니 갯수 조회 -->
+	<select id="totalCart" resultType="int">
+		select COUNT(pro_cd) AS tot_cnt
+		from tb_cart
+	</select>
+	
+	<!-- 장바구니 단건삭제 -->
+	<delete id="deleteCart">
+		DELETE FROM tb_cart
+		WHERE loginid = #{loginid} and pro_cd = #{pro_cd}
+	</delete>
+	
+		<!-- 장바구니 다중삭제 -->
+	<delete id="selectDeleteCart">
+		DELETE FROM tb_cart
+		WHERE loginid = #{loginid} and pro_cd IN 
+			<foreach collection="pro_cdList" index="index" item="list" open='(' close=')' separator=','>
+				 #{list}
+			</foreach>
+	</delete>
+	
+	<!-- 계좌번호 확인 단건 조회 -->
+	<select id="selectAccount" resultType="kr.happyjob.study.cus.model.CartModel">
+		SELECT account_num
+		      , name
+		      , dc.detail_name AS bank_cd
+		FROM tb_userinfo ui
+		inner join tb_detail_code dc on dc.detail_code = ui.bank_cd and dc.group_code like 'bankCD'
+		WHERE loginid = 'admin';
+	</select>
+	
+	<insert id="orderCart" parameterType="java.util.HashMap">
+       <selectKey resultType="string" keyProperty="order_cd" order="BEFORE">
+              select cast((ifnull(max(cast(order_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_order
+        </selectKey>
+			insert into tb_order
+	                  (
+	  	                  order_cd
+	                      , pro_cd
+	                      , loginid
+	                      , order_date
+	                      , order_hope_date
+	                      , order_price
+	                      , order_cnt
+	                      , refund_yn
+	                      , order_st
+	                  ) values 
+	                  <foreach item="item" index="index" collection="defaultList" separator=",">
+	                  (
+						    #{order_cd}
+	                      , #{item.pro_cd}
+	                      , #{item.loginid}
+	                      , DATE_FORMAT(now(), '%Y-%m-%d')
+	                      , #{item.order_hope_date}
+	                      , #{item.order_price}
+	                      , #{item.cart_cnt}
+	                      , '0'
+	                      , '0'
+	                  )
+					  </foreach>
+	</insert>
+	
+	
+</mapper>

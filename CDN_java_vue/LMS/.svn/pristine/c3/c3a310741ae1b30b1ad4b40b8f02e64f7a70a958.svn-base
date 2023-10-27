@@ -1,0 +1,47 @@
+package kr.happyjob.study.sptins.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import kr.happyjob.study.mngadm.model.LectureModel;
+import kr.happyjob.study.sptins.model.LecPlanModel;
+import kr.happyjob.study.sptins.model.WeeklyModel;
+
+public interface LecPlanDao {
+
+	/** 강의 목록 조회
+	 * @param paramMap
+	 * @return list, 강의 목록
+	 * @author 김정욱
+	 */
+	List<LectureModel> findLecList(Map<String, Object> paramMap) throws Exception;
+
+		
+	/** 강의 목록 총 갯수
+	 * @param paramMap
+	 * @return int, 조회된 행의 갯수
+	 * @author 김정욱
+	 */
+	int totalcnt(Map<String, Object> paramMap) throws Exception;
+
+
+	/** 강의 정보 조회
+	 * @param paramMap
+	 * @return 강의 정보
+	 * @author 김정욱
+	 */
+	LecPlanModel selectLec(Map<String, Object> paramMap) throws Exception;
+
+
+	/** 주차수 목록 조회
+	 * @param paramMap
+	 * @return 해당 강의 주차 목록
+	 * @author 김정욱
+	 */
+	List<WeeklyModel> findWeeklyList(Map<String, Object> paramMap) throws Exception;
+
+}
+
+

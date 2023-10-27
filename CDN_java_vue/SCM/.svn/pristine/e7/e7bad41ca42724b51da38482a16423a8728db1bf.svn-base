@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.OrderDao">
+
+	<!-- 주문 리스트 -->
+	<select id="orderList" resultType="kr.happyjob.study.scm.model.ScmOrderModel">
+				  
+		  select od.order_cd, 
+		            od.pro_cd,
+		            us.name,
+		            od.order_date,
+		            od.order_hope_date, 
+		            od.order_price,
+		            od.order_cnt,
+		            pr.pro_nm,		            
+		            pr.pro_unit_price,
+		            pr.pro_stock,
+		            od.order_st
+            from tb_order od
+                    inner join tb_product pr on od.pro_cd = pr.pro_cd
+                    inner join tb_userinfo us on od.loginid = us.loginid
+                    
+            <where>             	
+             	<if test="searchDel eq 'true'">
+                     and od.order_st = '0'
+             	</if>	
+             	
+             	<if test="searchPur eq 'true'">
+                     and od.order_st in ('0', '1')
+             	</if>
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'customer'">
+							and us.name LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or us.name LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+				
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and od.order_date between #{searchStartDate} and #{searchEndDate}				
+				</if>
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate == null) or (searchEndDate.equals('')))">
+					and od.order_date >= #{searchStartDate}			
+				</if>
+				<if test="((searchStartDate == null) or (searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and od.order_date <![CDATA[<=]]> #{searchEndDate}				
+				</if>	
+		</where>            
+            
+            order by cast(od.order_cd as unsigned) DESC	
+            LIMIT #{startPoint}, #{pageSize}
+		
+	</select>
+	
+	
+	<!-- 주문 건수 조회 -->
+	<select id="totalOrderCnt" resultType="int">
+		select Count(od.order_cd)
+		from tb_order od
+		            inner join tb_product pr on od.pro_cd = pr.pro_cd
+                    inner join tb_userinfo us on od.loginid = us.loginid
+		
+		<where>		   		             	
+             	<if test="searchDel eq 'true'">
+                     and od.order_st = '0'
+             	</if>	
+             	
+             	<if test="searchPur eq 'true'">
+                     and od.order_st in ('0', '1')
+             	</if>
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'customer'">
+							and us.name LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or us.name LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+				
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and od.order_date between #{searchStartDate} and #{searchEndDate}				
+				</if>
+				<if test="((searchStartDate != null) and (!searchStartDate.equals(''))) and ((searchEndDate == null) or (searchEndDate.equals('')))">
+					and od.order_date >= #{searchStartDate}			
+				</if>
+				<if test="((searchStartDate == null) or (searchStartDate.equals(''))) and ((searchEndDate != null) and (!searchEndDate.equals('')))">
+					and od.order_date <![CDATA[<=]]> #{searchEndDate}				
+				</if>
+		</where>            
+		
+	</select>
+	
+	
+	<!-- 발주를 위한 주문 상품 하나에 대한 정보 조회 -->
+	<select id="orderSelect" resultType="kr.happyjob.study.scm.model.ScmOrderModel">
+		 select od.order_cd, 
+		            od.pro_cd,		            
+		            od.order_date,
+		            od.order_hope_date, 
+		            od.order_price,
+		            od.order_cnt,
+		            pr.pro_nm,
+		            pr.pro_sup_price,
+		            pr.pro_unit_price,
+		            pr.pro_stock		           
+               from tb_order od
+                       inner join tb_product pr on od.pro_cd = pr.pro_cd                                          
+               where od.order_cd=#{order_cd} and pr.pro_cd=#{pro_cd}
+	</select>
+	
+	<!-- 발주 테이블에 발주 정보 삽입 -->
+	<insert id="insertPurchase">
+		<selectKey resultType="string" keyProperty="pur_cd" order="BEFORE">
+			select cast((ifnull(max(cast(pur_cd as unsigned)) ,0) + 1) as char(20)) 
+            from tb_purchase
+		</selectKey>
+		insert into tb_purchase
+		            (
+		                pur_cd, 
+		                pro_cd, 
+		                pur_cnt, 
+		                pur_date, 
+		                pur_appr, 
+		                pur_admin, 
+		                pur_appr_date, 
+		                pur_total_unit_price, 
+		                loginid, 
+		                sup_cd		            
+		            ) values (
+		                #{pur_cd}, 
+		                #{pro_cd},
+		                #{pur_cnt},
+		                DATE_FORMAT(now(), '%Y-%m-%d'), 
+		                '0',
+		                '',
+		                '',
+		                (select pro_unit_price from tb_product where pro_cd=#{pro_cd})*#{pur_cnt}, 			                		                               
+		                #{loginid}, 
+		                <!-- (select name from tb_userinfo where loginid = #{loginid}), 
+		                			=> name을 넣으려 하였으나, tb_purchase의 loginid 컬럼에 name을 넣으면 안됨
+		                					(이유 : tb_purchase의 loginid 컬럼은 외래키이므로 name을 넣을 수 없고, loginid만 넣어야 함)-->		                
+		                #{sup_cd} 	            
+		            )  
+	
+	</insert>
+	
+	
+	<!-- 지시서 테이블에 발주 지시서 정보 삽입 -->
+	<insert id="insertDirection">
+		<selectKey resultType="string" keyProperty="direc_cd" order="BEFORE">
+			select cast((ifnull(max(cast(direc_cd as unsigned)) ,0) + 1) as char(20)) 
+            from tb_direction
+		</selectKey>
+		 insert into tb_direction
+		            (		            
+		                direc_cd, 
+		                direc_date, 
+		                direc_type, 
+		                direc_note, 
+		                loginid, 
+		                pur_cd, 
+		                pro_cd, 
+		                deli_cd, 
+		                refund_cd, 
+		                order_cd		                    
+		            ) values (
+		                #{direc_cd}, 
+		                DATE_FORMAT(now(), '%Y-%m-%d'),
+		                '1',
+		                null,		                
+		                #{loginid},
+		                #{pur_cd},
+		                #{pro_cd},
+		                null,
+		                null,
+		                null		                           
+		            )
+	</insert>
+	
+	<!-- 주문 테이블에 주문 상태를 '발주 완료(2)'로 업데이트 -->
+	
+	<update id="updatePurchaseOrder">
+	
+		update tb_order
+			set order_st = '2'
+			where order_cd = #{order_cd} and pro_cd =#{pro_cd}
+	
+	</update>
+	
+	
+
+	
+		
+		
+		
+</mapper>

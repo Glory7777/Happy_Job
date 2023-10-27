@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.RefundDirectionDao">
+
+	<!-- 주문 목록 조회 -->
+	<select id="refundDirectionList" resultType="kr.happyjob.study.scm.model.RefundDirectionListModel">
+		/*kr.happyjob.study.scm.dao.refundDirectionList*/
+		select ref.refund_cd
+				, pro.pro_nm
+				, ord.order_date
+				, ref.refund_cnt
+				, ref.refund_price
+				, ref.refund_st
+		from tb_refund ref
+			inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+			inner join tb_order ord on(ref.pro_cd = ord.pro_cd and ref.order_cd = ord.order_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ord.order_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+			</if>
+		</where>
+		order by CAST(ref.refund_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+	<!-- 목록 전체 갯수 조회 -->
+	<select id="totalRefundDirection" resultType="int">
+		/*kr.happyjob.study.scm.dao.totalRefundDirection*/
+		select count(ref.refund_cd)
+		from tb_refund ref
+			inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+			inner join tb_order ord on(ref.pro_cd = ord.pro_cd and ref.order_cd = ord.order_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ord.order_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+			</if>
+		</where>
+	</select>
+	
+
+	
+</mapper>

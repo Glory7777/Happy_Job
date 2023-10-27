@@ -1,0 +1,48 @@
+package kr.happyjob.study.scm.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import kr.happyjob.study.scm.model.CategoryModel;
+import kr.happyjob.study.scm.model.ProductModel;
+import kr.happyjob.study.scm.model.SupplierModel;
+
+public interface ScmProductDao {
+
+	/** 공지사항 목록 조회 */
+	public List<ProductModel> productList(Map<String, Object> paramMap) throws Exception;
+	
+	/** 공지사항 카운트 조회 */
+	public int productTotal(Map<String, Object> paramMap) throws Exception;
+
+	/* 납품업자 리스트 조회 */
+	public List<SupplierModel> supList() throws Exception;
+
+	/* 상품정보  조회 */
+	public ProductModel productSelect(Map<String, Object>paramMap) throws Exception;
+
+	/* 상품정보등록 */
+	public int insertProduct(Map<String, Object> paramMap);
+	/* 상품사진등록 */	
+	public int insertProductFile(Map<String, Object> paramMap);
+    // 납품업체 정보 저장
+	public int insertSup(Map<String, Object> paramMap);
+
+	/* 상품정보수정 */
+	public int updateProduct(Map<String, Object> paramMap);
+	// 상품이미지 수정
+	public int updateProductFile(Map<String, Object> paramMap);
+
+
+	/* 상품정보삭제 */
+	public int deleteProduct(Map<String, Object> paramMap);
+	
+	public int deleteProductFile(Map<String, Object> paramMap);
+
+	public SupplierModel supInfo(Map<String, Object> paramMap);
+
+	public List<SupplierModel> selectSupList(Map<String, Object> paramMap);
+
+	
+	
+}

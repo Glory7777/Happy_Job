@@ -1,0 +1,85 @@
+package kr.happyjob.study.scm.service;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.happyjob.study.scm.dao.SupplierDao;
+import kr.happyjob.study.scm.model.ProductModel;
+import kr.happyjob.study.scm.model.SupplierModel;
+
+@Service
+public class SupplierServiceImpl  implements SupplierService {
+
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+	
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+	
+	@Autowired
+	SupplierDao supplierDao;
+
+
+	@Override
+	public List<SupplierModel> supplierList(Map<String, Object> paramMap) throws Exception {
+		return supplierDao.supplierList(paramMap);
+	}
+
+
+	@Override
+	public int supplierTotal(Map<String, Object> paramMap) throws Exception {
+		return  supplierDao.supplierTotal(paramMap);
+	}
+
+
+	@Override
+	public List<ProductModel> productList(Map<String, Object> paramMap) throws Exception {
+		return supplierDao.productList(paramMap);
+	}
+
+
+	@Override
+	public int productTotalCnt(Map<String, Object> paramMap) throws Exception {
+		return supplierDao.productTotalCnt(paramMap);
+	}
+
+
+	@Override
+	public int insertSupplier(Map<String, Object> paramMap, HttpServletRequest request) throws Exception {
+		return supplierDao.insertSupplier(paramMap);
+	}
+
+
+	@Override
+	public int updateSupplier(Map<String, Object> paramMap, HttpServletRequest request) throws Exception {
+		
+		logger.info("---------테스트테스트테스트-----------"+paramMap.get("sup_cd"));
+		
+		return supplierDao.updateSupplier(paramMap);
+	}
+
+
+	@Override
+	public int deleteSupplier(Map<String, Object> paramMap) throws Exception {
+		
+		logger.info("---------테스트테스트테스트-----------"+paramMap.get("sup_cd"));
+		
+		return supplierDao.deleteSupplier(paramMap);
+	}
+
+
+	@Override
+	public SupplierModel selectSupplier(Map<String, Object> paramMap) throws Exception {
+		return supplierDao.selectSupplier(paramMap);
+	}
+
+	
+}

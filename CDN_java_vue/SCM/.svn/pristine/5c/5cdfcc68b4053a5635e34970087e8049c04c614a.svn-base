@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.StockedProductDao">
+
+	<!-- 상품 리스트 -->
+	<select id="stockedProductList" resultType="kr.happyjob.study.scm.model.StockedProductModel">
+			
+		select pc.ct_cd,
+			      pc.ct_nm,
+			      pr.pro_cd,
+			      pr.pro_nm,
+			      pr.pro_model_nm,
+			      pr.pro_stock
+		  from tb_product pr
+			      inner join tb_product_category pc on pr.ct_cd = pc.ct_cd
+	      <where>		   		
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'category'">
+							and pc.ct_nm LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or pc.ct_nm LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+		</where>
+		  order by cast(pc.ct_cd as unsigned), cast(pr.pro_cd as unsigned) 	
+          LIMIT #{startPoint}, #{pageSize}		
+		
+	</select>
+	
+	
+	<!-- 전체 상품 개수 조회 -->
+	<select id="totalCnt" resultType="int">
+		select Count(pr.pro_cd)
+		from tb_product pr
+				inner join tb_product_category pc on pr.ct_cd = pc.ct_cd
+	<where>		   		
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'category'">
+							and pc.ct_nm LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or pc.ct_nm LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+		</where>
+		
+	</select>
+	
+		
+</mapper>

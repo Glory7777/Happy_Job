@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngstd.dao.LevelTestDao">
+
+   <!-- 내가 신청한 강의의 개설된 시험 조회하기 학생은 본인이듣고있는 예)임시강의2라는 강의에서 개설된 두개의 시험을 볼 수있다-->
+   <select id="testList" resultType="kr.happyjob.study.mngstd.model.LevelTestModel">
+	select A.*
+              ,B.*
+              ,C.name
+			  , D.*
+              , E.test_state
+            from (tb_lec A , tb_app_list B , tb_userinfo C , tb_test D)
+            LEFT OUTER JOIN tb_test_submit E
+            ON D.test_cd = E.test_cd AND E.loginID = B.loginID
+        where 1=1
+          and A.lec_cd = B.lec_cd
+          and A.loginID = C.loginID
+          and A.lec_cd = D.lec_cd
+        and B.loginID = #{loginId}
+        and B.app_yn='Y'
+        and B.end_yn='N';
+   </select>
+
+	<!--시험제출하기 학생이 쓴 답안-->
+   <insert id="TestSubmit" parameterType="map">
+          insert into tb_sm_ans
+							(
+							lec_cd
+							, loginID
+                            , test_cd
+                            , test_que_cd
+                            , sm_ans
+                            , cor_yn
+                            , score
+                            )
+                            values 
+                            (
+                            #{lec_cd}
+                            ,#{loginID}
+                            ,#{test_cd}
+                            ,#{test_que_cd}
+                            ,#{sm_ans}
+                            ,#{cor_yn}
+                            ,#{score}
+                            );
+   </insert>
+   
+   	<!--시험제출하기 작업2-->
+   <insert id="TestSubmit2" parameterType="map">
+          insert into tb_test_submit 
+								(
+									lec_cd
+                                    , loginID
+                                    , score
+                                    , test_state
+                                    , test_sm_date
+                                    , test_cd 
+                                    ) values 
+                                    (
+                                    #{lec_cd}
+                                    ,#{loginID}
+                                    ,#{total_Score}
+                                    ,#{test_state}
+                                    ,#{test_sm_date}
+                                    ,#{test_cd}
+                                    );
+   </insert>
+   
+   <!--시험결과값 조회  -->
+   <select id="resultList" resultType="kr.happyjob.study.mngstd.model.LevelTestModel">
+          select 
+				lec_cd
+                , loginID
+                , score
+                , test_state
+                , test_sm_date
+                , test_cd 
+		 from tb_test_submit 
+         where lec_cd = #{lec_cd}
+         and loginID = #{loginID}
+         and test_cd = #{test_cd}; 
+   </select>
+   
+         <!--시험결과값 조회2  -->
+   <select id="resultList2" resultType="kr.happyjob.study.mngstd.model.LevelTestModel">
+  select A.sm_ans,
+         A.cor_yn,
+         A.score,
+         B.test_que_cd,
+         B.test_que_ctt,
+         B.test_opt_1,
+         B.test_opt_2,
+         B.test_opt_3,
+         B.test_opt_4,
+         B.test_cor_ans
+    from (select sm_ans,
+                 cor_yn,
+                 score,
+                 test_que_cd
+            from tb_sm_ans
+           where lec_cd = #{lec_cd}
+             and loginID = #{loginID}
+             and test_cd = #{test_cd}) as A
+      inner join tb_test_bank as B on (A.test_que_cd = B.test_que_cd);
+   </select>
+   
+   
+</mapper>

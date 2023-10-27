@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.sptstd.dao.LectureListDao">
+
+   <!-- 전체조회  WHERE le.lec_start_date >= CURDATE() 마지막줄에 추가, <![CDATA[        ]] >이것도    -->
+      <select id="listLecture" resultType="kr.happyjob.study.sptstd.model.LectureListModel">
+      /* kr.happyjob.study.sptstd.dao.LectureListDao*/
+         select   le.lec_cd
+                  , le.lec_nm
+                  , le.lec_ctg
+                  , ui.name
+                  , le.lec_start_date
+                  , le.lec_end_date
+                  , le.lec_days
+                  , le.app_cnt
+                  , le.capacity
+                  , le.cls_room
+                  , le.lec_goal
+                  , le.lec_yn
+                  , le.svy_cd
+         from tb_lec le
+            inner join tb_userinfo ui on ui.loginid = le.loginid
+               <if test="(searchtext != null) and (!searchtext.equals(''))">
+               <choose>
+                  <when test="searchsel eq 'title'.toString()">
+                     and le.lec_nm Like CONCAT('%', #{searchtext}, '%')
+                  </when>
+                  <when test="searchsel eq 'writer'.toString()">
+                     and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+                  </when>
+                  <otherwise>
+                     and (
+                                  le.lec_nm Like CONCAT('%', #{searchtext}, '%')
+                              or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+                           )
+                  </otherwise>
+               </choose>
+            </if>
+                  order by le.lec_cd DESC
+                  LIMIT #{startpoint}, #{pageSize}      
+      </select>   
+
+
+
+
+   <!-- 총건조회 -->
+   <select id="totaLecture" resultType="int">
+      select COUNT(lec.lec_cd)As tot_cd
+      from tb_lec lec
+         inner join tb_userinfo ui on ui.loginid = lec.loginid
+               <where>
+                     <if test="(searchtext != null) and (!searchtext.equals(''))">
+                  <choose>
+                     <when test="searchsel eq 'title'.toString()">
+                        and lec.lec_nm Like CONCAT('%', #{searchtext}, '%')
+                     </when>
+                     <when test="searchsel eq 'writer'.toString()">
+                        and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+                     </when>
+                     <otherwise>
+                        and (
+                                     lec.lec_nm Like CONCAT('%', #{searchtext}, '%')
+                                 or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+                              )
+                     </otherwise>
+                  </choose>
+                  </if>   
+            </where>   
+   </select>
+               
+               
+
+
+   <!-- 강의목록 상세 -->            
+   <select id="LectureSelect" resultType ="kr.happyjob.study.sptstd.model.LectureListModel">
+         select 
+               le.lec_cd
+              ,le.lec_nm
+              ,le.lec_ctg
+              ,ui.name
+              ,ui.hp
+              ,ui.email
+              ,le.cls_room
+              ,le.lec_goal
+         from tb_lec le
+              inner join tb_userinfo ui on le.loginID = ui.loginID
+         where  le.lec_cd=#{lec_cd};
+   </select>            
+         
+         
+         
+         
+      <!-- 주차계획 상세 -->            
+   <select id="LecturePlan" resultType="kr.happyjob.study.sptstd.model.LectureListModel">
+      select 
+              lec.lec_cd 
+             ,lew.weekly_no
+             ,lew.week_goal
+             ,lew.week_ctt
+      from tb_lec_week lew 
+           inner join tb_lec lec on lec.lec_cd = lew.lec_cd
+       where lew.lec_cd = #{lec_cd}
+       order by cast(substring_index(lew.weekly_no, '주차', 1) as unsigned); 
+    </select>         
+    
+    
+    
+  <!--   강의 시작일과 종료일 뽑아내기   -->
+    <select id="checkdaty" resultType="kr.happyjob.study.sptstd.model.LectureListModel" parameterType="int">
+       select  
+         lec_cd
+          ,lec_nm
+          ,lec_start_date
+          ,lec_end_date
+      from tb_lec where lec_cd=#{lec_cd};  
+    </select> 
+    
+    
+    
+    <!-- 강의유효성검사 조오오온나 어려웠음 ㅅㅂㅅㅂ  -->
+    <select id="PossibleSave" resultType="int" parameterType="map">
+       <![CDATA[
+      SELECT count(*)
+        	FROM tb_lec A, tb_app_list B
+       WHERE 1=1
+       AND A.lec_cd = B.lec_cd
+         AND B.loginID = #{loginId}
+         AND ((#{lec_start_date} >= A.lec_start_date AND #{lec_start_date} <= A.lec_end_date) 
+         OR (#{lec_end_date} >= A.lec_start_date AND #{lec_end_date} <= A.lec_end_date) 
+         OR (#{lec_start_date} <= A.lec_start_date AND #{lec_end_date} >= A.lec_end_date));
+         ]]>
+    </select>
+    
+    
+    
+    <!--  강의신청하기  -->
+    <insert id="InsetLec" parameterType="map">
+      insert into  
+            tb_app_list(
+                     lec_cd
+                     ,loginID
+                     ,app_yn
+                     ,end_yn
+                     ) 
+               values (
+                     #{lec_cd}
+                     ,#{loginId}
+                     ,'N' 
+                     ,'N'
+                     );   
+    </insert> 
+    
+    
+    
+    
+    <!--강의취소하기  -->
+    <delete id="deleteLec" parameterType="map" >
+        delete from  tb_app_list
+            where lec_cd=#{lec_cd}
+            and loginID=#{loginId};
+    </delete>      
+          
+          
+          
+          
+    <!-- 신청여부조회 -->
+     <select id="lec_yn" resultType="int"  parameterType="map">
+        SELECT COUNT(*)
+         FROM tb_app_list
+      WHERE loginID=#{loginId}
+      and lec_cd=#{lec_cd};
+     </select>
+     
+     
+              
+              
+</mapper>

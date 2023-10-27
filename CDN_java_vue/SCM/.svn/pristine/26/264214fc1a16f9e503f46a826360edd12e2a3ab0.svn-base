@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.dlm.dao.DlmRefundListDao">
+
+	<!-- 주문 목록 조회 -->
+	<select id="dlmRefundList" resultType="kr.happyjob.study.dlm.model.DlmRefundListModel">
+		/*kr.happyjob.study.exe.dao.dlmRefundList*/
+		select ref.refund_cd
+				, pro.pro_nm
+				, pro.pro_cd
+				, pro.pro_model_nm
+        		, pro.pro_mfc
+       			, proCate.ct_nm
+				, ref.refund_cnt
+				, ref.refund_appr_date
+				, ref.refund_text
+		from tb_refund ref
+				inner join tb_product pro on(ref.pro_cd = pro.pro_cd)
+				inner join tb_product_category proCate on(pro.ct_cd = proCate.ct_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_appr_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_appr_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_appr_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+			</if>
+		</where>
+				and ref.refund_st = 1
+		order by CAST(ref.refund_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+	<!-- 목록 전체 갯수 조회 -->
+	<select id="totalRefund" resultType="int">
+		/*kr.happyjob.study.dlm.dao.totalRefund*/
+		select count(ref.refund_cd)
+		from tb_refund ref
+			inner join tb_product pro on(ref.pro_cd = pro.pro_cd)
+			inner join tb_product_category proCate on(pro.ct_cd = proCate.ct_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_appr_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_appr_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_appr_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+			</if>
+		</where>
+			and ref.refund_st = 1
+	</select>
+	
+	<!-- tb_product 재고 업데이트 -->
+	<update id="stockPlus">
+		update tb_product
+			set pro_stock = pro_stock + ${refundCnt}
+		where pro_cd = #{proCd}
+	</update>	
+	
+	<!-- tb_refund 반품상태 업데이트 -->
+	<update id="refundUpdate">
+		update tb_refund
+			set refund_st = 2
+		where refund_cd = #{refundCd}
+	</update>
+
+	<!-- tb_stock_history에 insert -->
+	<insert id="stockHisInsert">
+		<selectKey resultType="string" keyProperty="his_cd" order="BEFORE">
+              select cast((ifnull(max(cast(his_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_stock_history
+        </selectKey>
+        insert into tb_stock_history
+        			(
+        				his_cd
+        				, his_inout
+        				, his_reg_date
+        				, pro_cd
+        				, pro_nm
+        				, his_cnt
+        				, his_manage
+        			) values (
+        				#{his_cd}
+        				, '0'
+        				, DATE_FORMAT(now(), '%Y-%m-%d')
+        				, #{proCd}
+        				, #{proNm}
+        				, #{refundCnt}
+        				, #{loginId}
+        			)
+	</insert>
+	
+</mapper>

@@ -1,0 +1,616 @@
+-- 메뉴마스터
+CREATE TABLE `tm_mnu_mst` (
+	`MNU_ID`      VARCHAR(5)   NOT NULL COMMENT '메뉴ID', -- 메뉴ID
+	`HIR_MNU_ID`  VARCHAR(5)   NULL     COMMENT '상위메뉴ID', -- 상위메뉴ID
+	`MNU_NM`      VARCHAR(100) NULL     COMMENT '메뉴명', -- 메뉴명
+	`MNU_URL`     VARCHAR(500) NULL     COMMENT '메뉴 URL', -- 메뉴 URL
+	`MNU_DVS_COD` VARCHAR(1)   NULL     COMMENT '메뉴 구분 코드rn* M: 관리자, rn* U: 사용자 ', -- 메뉴 구분 코드rn* M: 관리자, rn* U: 사용자 
+	`GRP_NUM`     INT(11)      NULL     COMMENT '그룹번호', -- 그룹번호
+	`ODR`         INT(11)      NULL     COMMENT '순서', -- 순서
+	`LVL`         SMALLINT(6)  NULL     COMMENT '라벨', -- 라벨
+	`MNU_ICO_COD` VARCHAR(7)   NULL     COMMENT '메뉴아이콘코드', -- 메뉴아이콘코드
+	`DLT_POA`     VARCHAR(1)   NULL     COMMENT '삭제유무', -- 삭제유무
+	`USE_POA`     VARCHAR(1)   NULL     COMMENT '사용유무' -- 사용유무
+)
+COMMENT '메뉴마스터';
+
+-- 메뉴마스터
+ALTER TABLE `tm_mnu_mst`
+	ADD CONSTRAINT `PK_tm_mnu_mst` -- 메뉴마스터 기본키
+		PRIMARY KEY (
+			`MNU_ID` -- 메뉴ID
+		);
+
+-- 공통코드
+CREATE TABLE `tb_group_code` (
+	`group_code`    VARCHAR(20)   NOT NULL COMMENT '그룹코드', -- 그룹코드
+	`group_name`    VARCHAR(200)  NULL     COMMENT '그룹코드명', -- 그룹코드명
+	`note`          VARCHAR(2000) NULL     COMMENT '주석', -- 주석
+	`use_yn`        VARCHAR(10)   NULL     COMMENT '사용여부', -- 사용여부
+	`regId`         VARCHAR(20)   NULL     COMMENT '등록자', -- 등록자
+	`reg_date`      DATETIME      NULL     COMMENT '등록일', -- 등록일
+	`updateId`      VARCHAR(20)   NULL     COMMENT '수정자', -- 수정자
+	`update_date`   DATETIME      NULL     COMMENT '수정일', -- 수정일
+	`g_temp_field1` VARCHAR(20)   NULL     COMMENT '임시필드1', -- 임시필드1
+	`g_temp_field2` VARCHAR(20)   NULL     COMMENT '임시필드2', -- 임시필드2
+	`g_temp_field3` VARCHAR(20)   NULL     COMMENT '입시필드3' -- 입시필드3
+)
+COMMENT '공통코드';
+
+-- 공통코드
+ALTER TABLE `tb_group_code`
+	ADD CONSTRAINT `PK_tb_group_code` -- 공통코드 기본키
+		PRIMARY KEY (
+			`group_code` -- 그룹코드
+		);
+
+-- 상세코드
+CREATE TABLE `tb_detail_code` (
+	`detail_code`   VARCHAR(20)   NOT NULL COMMENT '상세코드', -- 상세코드
+	`group_code`    VARCHAR(20)   NOT NULL COMMENT '그룹코드', -- 그룹코드
+	`detail_name`   VARCHAR(200)  NULL     COMMENT '상세코드명', -- 상세코드명
+	`note`          VARCHAR(2000) NULL     COMMENT '주석', -- 주석
+	`use_yn`        VARCHAR(10)   NULL     COMMENT '사용여부', -- 사용여부
+	`regId`         VARCHAR(20)   NULL     COMMENT '등록자', -- 등록자
+	`reg_date`      DATETIME      NULL     COMMENT '등록일', -- 등록일
+	`updateId`      VARCHAR(20)   NULL     COMMENT '수정자', -- 수정자
+	`update_date`   DATETIME      NULL     COMMENT '수정일', -- 수정일
+	`sequence`      INT(3)        NULL     COMMENT '순서', -- 순서
+	`d_temp_field1` VARCHAR(20)   NULL     COMMENT '임시필드1', -- 임시필드1
+	`d_temp_field2` VARCHAR(20)   NULL     COMMENT '임시필드2', -- 임시필드2
+	`d_temp_field3` VARCHAR(20)   NULL     COMMENT '임시필드3', -- 임시필드3
+	`d_temp_field4` VARCHAR(20)   NULL     COMMENT '임시필드4' -- 임시필드4
+)
+COMMENT '상세코드';
+
+-- 상세코드
+ALTER TABLE `tb_detail_code`
+	ADD CONSTRAINT `PK_tb_detail_code` -- 상세코드 기본키
+		PRIMARY KEY (
+			`detail_code`, -- 상세코드
+			`group_code`   -- 그룹코드
+		);
+
+-- 메뉴권한
+CREATE TABLE `tn_usr_mnu_atrt` (
+	`user_type` VARCHAR(1) NOT NULL COMMENT '사용자타입', -- 사용자타입
+	`MNU_ID`    VARCHAR(5) NOT NULL COMMENT '메뉴ID' -- 메뉴ID
+)
+COMMENT '메뉴권한';
+
+-- 메뉴권한
+ALTER TABLE `tn_usr_mnu_atrt`
+	ADD CONSTRAINT `PK_tn_usr_mnu_atrt` -- 메뉴권한 기본키
+		PRIMARY KEY (
+			`user_type`, -- 사용자타입
+			`MNU_ID`     -- 메뉴ID
+		);
+
+-- 사용자
+CREATE TABLE `tb_userinfo` (
+	`loginid`     VARCHAR(50)  NOT NULL COMMENT '사용자ID', -- 사용자ID
+	`user_type`   VARCHAR(1)   NULL     COMMENT '사용자구분', -- 사용자구분
+	`name`        VARCHAR(20)  NULL     COMMENT '이름', -- 이름
+	`password`    VARCHAR(100) NULL     COMMENT '비밀번호', -- 비밀번호
+	`user_hp`     VARCHAR(15)  NULL     COMMENT '연락처', -- 연락처
+	`user_email`  VARCHAR(100) NULL     COMMENT '이메일', -- 이메일
+	`reg_date`    VARCHAR(30)  NULL     COMMENT '가입일자', -- 가입일자
+	`addr`        VARCHAR(200) NULL     COMMENT '주소', -- 주소
+	`addr_dt`     VARCHAR(50)  NULL     COMMENT '상세주소', -- 상세주소
+	`zip_cd`      VARCHAR(10)  NULL     COMMENT '우편번호', -- 우편번호
+	`account_num` VARCHAR(50)  NULL     COMMENT '계좌번호', -- 계좌번호
+	`user_yn`     VARCHAR(1)   NULL     COMMENT '탈퇴여부' -- 탈퇴여부
+)
+COMMENT '사용자';
+
+-- 사용자
+ALTER TABLE `tb_userinfo`
+	ADD CONSTRAINT `PK_tb_userinfo` -- 사용자 기본키
+		PRIMARY KEY (
+			`loginid` -- 사용자ID
+		);
+
+-- 상품
+CREATE TABLE `tb_product` (
+	`pro_cd`         VARCHAR(20)   NOT NULL COMMENT '상품코드', -- 상품코드
+	`ct_cd`          VARCHAR(20)   NULL     COMMENT '카테고리코드', -- 카테고리코드
+	`pro_nm`         VARCHAR(100)  NULL     COMMENT '상품명', -- 상품명
+	`pro_model_nm`   VARCHAR(100)  NULL     COMMENT '상품모델명', -- 상품모델명
+	`pro_sup_price`  INT           NULL     COMMENT '공급단가', -- 공급단가
+	`pro_unit_price` INT           NULL     COMMENT '납품단가', -- 납품단가
+	`pro_stock`      INT           NULL     COMMENT '재고', -- 재고
+	`pro_dt`         VARCHAR(2000) NULL     COMMENT '상세정보', -- 상세정보
+	`pro_mfc`        VARCHAR(50)   NULL     COMMENT '제조사', -- 제조사
+	`pro_reg_date`   VARCHAR(10)   NULL     COMMENT '상품등록일' -- 상품등록일
+)
+COMMENT '상품';
+
+-- 상품
+ALTER TABLE `tb_product`
+	ADD CONSTRAINT `PK_tb_product` -- 상품 기본키
+		PRIMARY KEY (
+			`pro_cd` -- 상품코드
+		);
+
+-- 주문
+CREATE TABLE `tb_order` (
+	`order_cd`        VARCHAR(20) NOT NULL COMMENT '주문코드', -- 주문코드
+	`pro_cd`          VARCHAR(20) NOT NULL COMMENT '상품코드', -- 상품코드
+	`loginid`         VARCHAR(50) NULL     COMMENT '주문자', -- 주문자
+	`order_date`      VARCHAR(10) NULL     COMMENT '주문일자', -- 주문일자
+	`order_hope_date` VARCHAR(10) NULL     COMMENT '배송희망일자', -- 배송희망일자
+	`order_price`     INT         NULL     COMMENT '주문금액', -- 주문금액
+	`order_cnt`       INT         NULL     COMMENT '수량', -- 수량
+	`refund_yn`       VARCHAR(1)  NULL     COMMENT '반품여부' -- 반품여부
+)
+COMMENT '주문';
+
+-- 주문
+ALTER TABLE `tb_order`
+	ADD CONSTRAINT `PK_tb_order` -- 주문 기본키
+		PRIMARY KEY (
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		);
+
+-- 장바구니
+CREATE TABLE `tb_cart` (
+	`loginid`       VARCHAR(50) NOT NULL COMMENT '사용자ID', -- 사용자ID
+	`pro_cd`        VARCHAR(20) NOT NULL COMMENT '상품코드', -- 상품코드
+	`cart_cnt`      INT         NULL     COMMENT '수량', -- 수량
+	`cart_reg_date` VARCHAR(10) NULL     COMMENT '담은날짜' -- 담은날짜
+)
+COMMENT '장바구니';
+
+-- 장바구니
+ALTER TABLE `tb_cart`
+	ADD CONSTRAINT `PK_tb_cart` -- 장바구니 기본키
+		PRIMARY KEY (
+			`loginid`, -- 사용자ID
+			`pro_cd`   -- 상품코드
+		);
+
+-- 반품
+CREATE TABLE `tb_refund` (
+	`refund_cd`    VARCHAR(20)   NOT NULL COMMENT '반품코드', -- 반품코드
+	`order_cd`     VARCHAR(20)   NOT NULL COMMENT '주문코드', -- 주문코드
+	`pro_cd`       VARCHAR(20)   NOT NULL COMMENT '상품코드', -- 상품코드
+	`refund_cnt`   INT           NULL     COMMENT '반품수량', -- 반품수량
+	`refund_price` INT           NULL     COMMENT '반품금액', -- 반품금액
+	`refund_date`  VARCHAR(10)   NULL     COMMENT '반품일자', -- 반품일자
+	`refund_st`    VARCHAR(1)    NULL     COMMENT '반품상태', -- 반품상태
+	`refund_text`  VARCHAR(2000) NULL     COMMENT '반품사유' -- 반품사유
+)
+COMMENT '반품';
+
+-- 반품
+ALTER TABLE `tb_refund`
+	ADD CONSTRAINT `PK_tb_refund` -- 반품 기본키
+		PRIMARY KEY (
+			`refund_cd`, -- 반품코드
+			`order_cd`,  -- 주문코드
+			`pro_cd`     -- 상품코드
+		);
+
+-- 발주
+CREATE TABLE `tb_purchase` (
+	`pur_cd`               VARCHAR(20) NOT NULL COMMENT '발주코드', -- 발주코드
+	`pro_cd`               VARCHAR(20) NOT NULL COMMENT '상품코드', -- 상품코드
+	`pur_cnt`              INT         NULL     COMMENT '수량', -- 수량
+	`pur_date`             VARCHAR(10) NULL     COMMENT '발주일자', -- 발주일자
+	`pur_appr`             VARCHAR(1)  NULL     COMMENT '발주승인', -- 발주승인
+	`pur_admin`            VARCHAR(50) NULL     COMMENT '승인자', -- 승인자
+	`pur_appr_date`        VARCHAR(10) NULL     COMMENT '승인일자', -- 승인일자
+	`pur_total_unit_price` INT         NULL     COMMENT '총납품액', -- 총납품액
+	`loginid`              VARCHAR(50) NULL     COMMENT '발주자', -- 발주자
+	`sup_cd`               VARCHAR(20) NULL     COMMENT '납품업체코드' -- 납품업체코드
+)
+COMMENT '발주';
+
+-- 발주
+ALTER TABLE `tb_purchase`
+	ADD CONSTRAINT `PK_tb_purchase` -- 발주 기본키
+		PRIMARY KEY (
+			`pur_cd`, -- 발주코드
+			`pro_cd`  -- 상품코드
+		);
+
+-- 배송
+CREATE TABLE `tb_delivery` (
+	`deli_cd`   VARCHAR(20) NOT NULL COMMENT '배송코드', -- 배송코드
+	`order_cd`  VARCHAR(20) NOT NULL COMMENT '주문코드', -- 주문코드
+	`pro_cd`    VARCHAR(20) NOT NULL COMMENT '상품코드', -- 상품코드
+	`deli_st`   VARCHAR(1)  NULL     COMMENT '배송상태코드', -- 배송상태코드
+	`deli_date` VARCHAR(10) NULL     COMMENT '배송일자', -- 배송일자
+	`deli_cnt`  INT         NULL     COMMENT '배송수량' -- 배송수량
+)
+COMMENT '배송';
+
+-- 배송
+ALTER TABLE `tb_delivery`
+	ADD CONSTRAINT `PK_tb_delivery` -- 배송 기본키
+		PRIMARY KEY (
+			`deli_cd`,  -- 배송코드
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		);
+
+-- 지시서
+CREATE TABLE `tb_direction` (
+	`direc_cd`   VARCHAR(20)   NOT NULL COMMENT '지시서코드', -- 지시서코드
+	`direc_date` VARCHAR(10)   NULL     COMMENT '지시서작성일', -- 지시서작성일
+	`direc_type` VARCHAR(1)    NULL     COMMENT '지시서구분코드', -- 지시서구분코드
+	`direc_note` VARCHAR(2000) NULL     COMMENT '비고', -- 비고
+	`loginid`    VARCHAR(50)   NULL     COMMENT '지시서작성자', -- 지시서작성자
+	`pur_cd`     VARCHAR(20)   NULL     COMMENT '발주코드', -- 발주코드
+	`pro_cd`     VARCHAR(20)   NULL     COMMENT '상품코드', -- 상품코드
+	`deli_cd`    VARCHAR(20)   NULL     COMMENT '배송코드', -- 배송코드
+	`refund_cd`  VARCHAR(20)   NULL     COMMENT '반품코드', -- 반품코드
+	`order_cd`   VARCHAR(20)   NULL     COMMENT '주문코드' -- 주문코드
+)
+COMMENT '지시서';
+
+-- 지시서
+ALTER TABLE `tb_direction`
+	ADD CONSTRAINT `PK_tb_direction` -- 지시서 기본키
+		PRIMARY KEY (
+			`direc_cd` -- 지시서코드
+		);
+
+-- 문의
+CREATE TABLE `tb_qna` (
+	`qna_cd`          VARCHAR(20)   NOT NULL COMMENT '문의코드', -- 문의코드
+	`qna_title`       VARCHAR(100)  NULL     COMMENT '문의제목', -- 문의제목
+	`qna_content`     VARCHAR(2000) NULL     COMMENT '문의내용', -- 문의내용
+	`qna_reg_date`    VARCHAR(10)   NULL     COMMENT '문의일자', -- 문의일자
+	`qna_update_date` VARCHAR(10)   NULL     COMMENT '수정일자', -- 수정일자
+	`qna_ct`          VARCHAR(1)    NULL     COMMENT '카테고리', -- 카테고리
+	`qna_yn`          VARCHAR(1)    NULL     COMMENT '답변여부', -- 답변여부
+	`loginid`         VARCHAR(50)   NULL     COMMENT '사용자ID' -- 사용자ID
+)
+COMMENT '문의';
+
+-- 문의
+ALTER TABLE `tb_qna`
+	ADD CONSTRAINT `PK_tb_qna` -- 문의 기본키
+		PRIMARY KEY (
+			`qna_cd` -- 문의코드
+		);
+
+-- 납품업체
+CREATE TABLE `tb_supplier` (
+	`sup_cd`      VARCHAR(20)  NOT NULL COMMENT '납품업체코드', -- 납품업체코드
+	`pro_cd`      VARCHAR(20)  NOT NULL COMMENT '상품코드', -- 상품코드
+	`sup_nm`      VARCHAR(50)  NULL     COMMENT '납품업체명', -- 납품업체명
+	`sup_manager` VARCHAR(50)  NULL     COMMENT '납품담당자', -- 납품담당자
+	`sup_hp`      VARCHAR(15)  NULL     COMMENT '연락처', -- 연락처
+	`sup_addr`    VARCHAR(200) NULL     COMMENT '주소', -- 주소
+	`sup_email`   VARCHAR(50)  NULL     COMMENT '이메일' -- 이메일
+)
+COMMENT '납품업체';
+
+-- 납품업체
+ALTER TABLE `tb_supplier`
+	ADD CONSTRAINT `PK_tb_supplier` -- 납품업체 기본키
+		PRIMARY KEY (
+			`sup_cd`, -- 납품업체코드
+			`pro_cd`  -- 상품코드
+		);
+
+-- 답변
+CREATE TABLE `tb_answer` (
+	`qna_cd`             VARCHAR(20)   NOT NULL COMMENT '문의코드', -- 문의코드
+	`answer_content`     VARCHAR(2000) NULL     COMMENT '답변내용', -- 답변내용
+	`answer_reg_date`    VARCHAR(10)   NULL     COMMENT '답변일자', -- 답변일자
+	`answer_update_date` VARCHAR(10)   NULL     COMMENT '수정일자', -- 수정일자
+	`loginid`            VARCHAR(50)   NULL     COMMENT '사용자ID' -- 사용자ID
+)
+COMMENT '답변';
+
+-- 답변
+ALTER TABLE `tb_answer`
+	ADD CONSTRAINT `PK_tb_answer` -- 답변 기본키
+		PRIMARY KEY (
+			`qna_cd` -- 문의코드
+		);
+
+-- 공지사항
+CREATE TABLE `tb_notice` (
+	`notice_cd`          VARCHAR(20)   NOT NULL COMMENT '공지코드', -- 공지코드
+	`notice_title`       VARCHAR(200)  NULL     COMMENT '공지제목', -- 공지제목
+	`notice_content`     VARCHAR(2000) NULL     COMMENT '공지내용', -- 공지내용
+	`notice_reg_date`    VARCHAR(10)   NULL     COMMENT '작성일', -- 작성일
+	`notice_update_date` VARCHAR(10)   NULL     COMMENT '수정일', -- 수정일
+	`notice_read_cnt`    INT           NULL     COMMENT '조회수', -- 조회수
+	`notice_delete_yn`   VARCHAR(1)    NULL     COMMENT '삭제여부', -- 삭제여부
+	`loginid`            VARCHAR(50)   NULL     COMMENT '작성자' -- 작성자
+)
+COMMENT '공지사항';
+
+-- 공지사항
+ALTER TABLE `tb_notice`
+	ADD CONSTRAINT `PK_tb_notice` -- 공지사항 기본키
+		PRIMARY KEY (
+			`notice_cd` -- 공지코드
+		);
+
+-- 상품카테고리
+CREATE TABLE `tb_produc_category` (
+	`ct_cd` VARCHAR(20) NOT NULL COMMENT '카테고리코드', -- 카테고리코드
+	`ct_nm` VARCHAR(50) NULL     COMMENT '카테고리명' -- 카테고리명
+)
+COMMENT '상품카테고리';
+
+-- 상품카테고리
+ALTER TABLE `tb_produc_category`
+	ADD CONSTRAINT `PK_tb_produc_category` -- 상품카테고리 기본키
+		PRIMARY KEY (
+			`ct_cd` -- 카테고리코드
+		);
+
+-- 파일
+CREATE TABLE `tb_file` (
+	`file_cd`        VARCHAR(20)   NOT NULL COMMENT '파일코드', -- 파일코드
+	`logic_path`     VARCHAR(1000) NULL     COMMENT '논리경로', -- 논리경로
+	`physic_path`    VARCHAR(1000) NULL     COMMENT '물리경로', -- 물리경로
+	`file_nm`        VARCHAR(200)  NULL     COMMENT '파일명', -- 파일명
+	`file_extention` VARCHAR(50)   NULL     COMMENT '확장자', -- 확장자
+	`file_size`      INT           NULL     COMMENT '사이즈', -- 사이즈
+	`pro_cd`         VARCHAR(20)   NULL     COMMENT '상품코드', -- 상품코드
+	`notice_cd`      VARCHAR(20)   NULL     COMMENT '공지코드', -- 공지코드
+	`qna_cd`         VARCHAR(20)   NULL     COMMENT '문의코드' -- 문의코드
+)
+COMMENT '파일';
+
+-- 파일
+ALTER TABLE `tb_file`
+	ADD CONSTRAINT `PK_tb_file` -- 파일 기본키
+		PRIMARY KEY (
+			`file_cd` -- 파일코드
+		);
+
+-- 상세코드
+ALTER TABLE `tb_detail_code`
+	ADD CONSTRAINT `FK_tb_group_code_TO_tb_detail_code` -- 공통코드 -> 상세코드
+		FOREIGN KEY (
+			`group_code` -- 그룹코드
+		)
+		REFERENCES `tb_group_code` ( -- 공통코드
+			`group_code` -- 그룹코드
+		);
+
+-- 메뉴권한
+ALTER TABLE `tn_usr_mnu_atrt`
+	ADD CONSTRAINT `FK_tm_mnu_mst_TO_tn_usr_mnu_atrt` -- 메뉴마스터 -> 메뉴권한
+		FOREIGN KEY (
+			`MNU_ID` -- 메뉴ID
+		)
+		REFERENCES `tm_mnu_mst` ( -- 메뉴마스터
+			`MNU_ID` -- 메뉴ID
+		);
+
+-- 상품
+ALTER TABLE `tb_product`
+	ADD CONSTRAINT `FK_tb_produc_category_TO_tb_product` -- 상품카테고리 -> 상품
+		FOREIGN KEY (
+			`ct_cd` -- 카테고리코드
+		)
+		REFERENCES `tb_produc_category` ( -- 상품카테고리
+			`ct_cd` -- 카테고리코드
+		);
+
+-- 주문
+ALTER TABLE `tb_order`
+	ADD CONSTRAINT `FK_tb_product_TO_tb_order` -- 상품 -> 주문
+		FOREIGN KEY (
+			`pro_cd` -- 상품코드
+		)
+		REFERENCES `tb_product` ( -- 상품
+			`pro_cd` -- 상품코드
+		);
+
+-- 주문
+ALTER TABLE `tb_order`
+	ADD CONSTRAINT `FK_tb_userinfo_TO_tb_order` -- 사용자 -> 주문
+		FOREIGN KEY (
+			`loginid` -- 주문자
+		)
+		REFERENCES `tb_userinfo` ( -- 사용자
+			`loginid` -- 사용자ID
+		);
+
+-- 장바구니
+ALTER TABLE `tb_cart`
+	ADD CONSTRAINT `FK_tb_product_TO_tb_cart` -- 상품 -> 장바구니
+		FOREIGN KEY (
+			`pro_cd` -- 상품코드
+		)
+		REFERENCES `tb_product` ( -- 상품
+			`pro_cd` -- 상품코드
+		);
+
+-- 장바구니
+ALTER TABLE `tb_cart`
+	ADD CONSTRAINT `FK_tb_userinfo_TO_tb_cart` -- 사용자 -> 장바구니
+		FOREIGN KEY (
+			`loginid` -- 사용자ID
+		)
+		REFERENCES `tb_userinfo` ( -- 사용자
+			`loginid` -- 사용자ID
+		);
+
+-- 반품
+ALTER TABLE `tb_refund`
+	ADD CONSTRAINT `FK_tb_order_TO_tb_refund` -- 주문 -> 반품
+		FOREIGN KEY (
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		)
+		REFERENCES `tb_order` ( -- 주문
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		);
+
+-- 발주
+ALTER TABLE `tb_purchase`
+	ADD CONSTRAINT `FK_tb_product_TO_tb_purchase` -- 상품 -> 발주
+		FOREIGN KEY (
+			`pro_cd` -- 상품코드
+		)
+		REFERENCES `tb_product` ( -- 상품
+			`pro_cd` -- 상품코드
+		);
+
+-- 발주
+ALTER TABLE `tb_purchase`
+	ADD CONSTRAINT `FK_tb_userinfo_TO_tb_purchase` -- 사용자 -> 발주
+		FOREIGN KEY (
+			`loginid` -- 발주자
+		)
+		REFERENCES `tb_userinfo` ( -- 사용자
+			`loginid` -- 사용자ID
+		);
+
+-- 발주
+ALTER TABLE `tb_purchase`
+	ADD CONSTRAINT `FK_tb_supplier_TO_tb_purchase` -- 납품업체 -> 발주
+		FOREIGN KEY (
+			`sup_cd`, -- 납품업체코드
+			`pro_cd`  -- 상품코드
+		)
+		REFERENCES `tb_supplier` ( -- 납품업체
+			`sup_cd`, -- 납품업체코드
+			`pro_cd`  -- 상품코드
+		);
+
+-- 배송
+ALTER TABLE `tb_delivery`
+	ADD CONSTRAINT `FK_tb_order_TO_tb_delivery` -- 주문 -> 배송
+		FOREIGN KEY (
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		)
+		REFERENCES `tb_order` ( -- 주문
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		);
+
+-- 지시서
+ALTER TABLE `tb_direction`
+	ADD CONSTRAINT `FK_tb_userinfo_TO_tb_direction` -- 사용자 -> 지시서
+		FOREIGN KEY (
+			`loginid` -- 지시서작성자
+		)
+		REFERENCES `tb_userinfo` ( -- 사용자
+			`loginid` -- 사용자ID
+		);
+
+-- 지시서
+ALTER TABLE `tb_direction`
+	ADD CONSTRAINT `FK_tb_purchase_TO_tb_direction` -- 발주 -> 지시서
+		FOREIGN KEY (
+			`pur_cd`, -- 발주코드
+			`pro_cd`  -- 상품코드
+		)
+		REFERENCES `tb_purchase` ( -- 발주
+			`pur_cd`, -- 발주코드
+			`pro_cd`  -- 상품코드
+		);
+
+-- 지시서
+ALTER TABLE `tb_direction`
+	ADD CONSTRAINT `FK_tb_delivery_TO_tb_direction` -- 배송 -> 지시서
+		FOREIGN KEY (
+			`deli_cd`,  -- 배송코드
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		)
+		REFERENCES `tb_delivery` ( -- 배송
+			`deli_cd`,  -- 배송코드
+			`order_cd`, -- 주문코드
+			`pro_cd`    -- 상품코드
+		);
+
+-- 지시서
+ALTER TABLE `tb_direction`
+	ADD CONSTRAINT `FK_tb_refund_TO_tb_direction` -- 반품 -> 지시서
+		FOREIGN KEY (
+			`refund_cd`, -- 반품코드
+			`order_cd`,  -- 주문코드
+			`pro_cd`     -- 상품코드
+		)
+		REFERENCES `tb_refund` ( -- 반품
+			`refund_cd`, -- 반품코드
+			`order_cd`,  -- 주문코드
+			`pro_cd`     -- 상품코드
+		);
+
+-- 문의
+ALTER TABLE `tb_qna`
+	ADD CONSTRAINT `FK_tb_userinfo_TO_tb_qna` -- 사용자 -> 문의
+		FOREIGN KEY (
+			`loginid` -- 사용자ID
+		)
+		REFERENCES `tb_userinfo` ( -- 사용자
+			`loginid` -- 사용자ID
+		);
+
+-- 납품업체
+ALTER TABLE `tb_supplier`
+	ADD CONSTRAINT `FK_tb_product_TO_tb_supplier` -- 상품 -> 납품업체
+		FOREIGN KEY (
+			`pro_cd` -- 상품코드
+		)
+		REFERENCES `tb_product` ( -- 상품
+			`pro_cd` -- 상품코드
+		);
+
+-- 답변
+ALTER TABLE `tb_answer`
+	ADD CONSTRAINT `FK_tb_userinfo_TO_tb_answer` -- 사용자 -> 답변
+		FOREIGN KEY (
+			`loginid` -- 사용자ID
+		)
+		REFERENCES `tb_userinfo` ( -- 사용자
+			`loginid` -- 사용자ID
+		);
+
+-- 공지사항
+ALTER TABLE `tb_notice`
+	ADD CONSTRAINT `FK_tb_userinfo_TO_tb_notice` -- 사용자 -> 공지사항
+		FOREIGN KEY (
+			`loginid` -- 작성자
+		)
+		REFERENCES `tb_userinfo` ( -- 사용자
+			`loginid` -- 사용자ID
+		);
+
+-- 파일
+ALTER TABLE `tb_file`
+	ADD CONSTRAINT `FK_tb_product_TO_tb_file` -- 상품 -> 파일
+		FOREIGN KEY (
+			`pro_cd` -- 상품코드
+		)
+		REFERENCES `tb_product` ( -- 상품
+			`pro_cd` -- 상품코드
+		);
+
+-- 파일
+ALTER TABLE `tb_file`
+	ADD CONSTRAINT `FK_tb_notice_TO_tb_file` -- 공지사항 -> 파일
+		FOREIGN KEY (
+			`notice_cd` -- 공지코드
+		)
+		REFERENCES `tb_notice` ( -- 공지사항
+			`notice_cd` -- 공지코드
+		);
+
+-- 파일
+ALTER TABLE `tb_file`
+	ADD CONSTRAINT `FK_tb_qna_TO_tb_file` -- 문의 -> 파일
+		FOREIGN KEY (
+			`qna_cd` -- 문의코드
+		)
+		REFERENCES `tb_qna` ( -- 문의
+			`qna_cd` -- 문의코드
+		);

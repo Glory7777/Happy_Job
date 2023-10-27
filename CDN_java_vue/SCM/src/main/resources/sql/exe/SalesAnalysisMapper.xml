@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.exe.dao.SalesAnalysisDao">
+	
+	<!-- 카테고리별 매출현황 조회 -->
+	<select id="ctSales" resultType="kr.happyjob.study.exe.model.CtSales">
+		SELECT
+		    ROUND(SUM(ord.order_price)/10000 , 1) AS ct_total,
+		    dc.detail_name as ct_nm,
+		    (SUM(ord.order_price) / total_sum * 100) AS percentage
+		FROM
+		    tb_order ord
+		LEFT JOIN
+		    tb_product p ON p.pro_cd = ord.pro_cd
+		LEFT JOIN
+		    tb_detail_code dc ON dc.detail_code = p.ct_cd
+		CROSS JOIN
+		    (SELECT SUM(ord.order_price) AS total_sum
+		     FROM tb_order ord
+		     LEFT JOIN tb_product p ON p.pro_cd = ord.pro_cd
+		     LEFT JOIN tb_detail_code dc ON dc.detail_code = p.ct_cd
+		     WHERE dc.group_code = 'productCD'
+		     and month(ord.order_date) = month(CURRENT_DATE()) and year(ord.order_date) = year(CURRENT_DATE())
+		     ) AS total
+		WHERE
+		    dc.group_code = 'productCD'
+		    and month(ord.order_date) = month(CURRENT_DATE()) and year(ord.order_date) = year(CURRENT_DATE())
+		GROUP BY
+		    p.ct_cd
+	</select>
+	
+	<!-- 카테고리별 매출현황 조회 -->
+	<select id="selProduct" resultType="kr.happyjob.study.exe.model.SelProduct">
+		select p.pro_cd 
+		, p.pro_nm 
+		, IFNULL(sum(ord.order_cnt),0) AS month_cnt
+		, IFNULL(sum(ord.order_price), 0) AS month_sales
+		from tb_product p
+		left join tb_order ord ON p.pro_cd = ord.pro_cd
+		left join tb_refund rf ON ord.pro_cd = rf.pro_cd
+		LEFT JOIN
+		tb_detail_code dc ON dc.detail_code = p.ct_cd
+		where dc.detail_name = #{ct_nm}
+		group by p.pro_cd
+	</select>
+	
+	
+	
+	<!-- 매출현황 갯수 조회 -->
+	<select id="selProductTotal" resultType="int">
+		SELECT COUNT(*) AS tot_cnt
+		FROM tb_product p
+		LEFT JOIN tb_detail_code dc ON dc.detail_code = p.ct_cd
+		WHERE dc.detail_name = #{ct_nm}
+	</select>
+	
+	
+	<!-- 선택된 상품차트  -->
+	<select id="spChart" resultType="kr.happyjob.study.exe.model.SpChart">
+		SELECT
+		    DATE_FORMAT(order_date, '%Y-%m') AS month,
+		    ROUND(SUM(order_price)/10000, 1) AS month_profit
+		FROM
+		    tb_order
+		  WHERE
+				order_date >= NOW() - INTERVAL 1 YEAR
+		    and pro_cd = #{pro_cd}
+		GROUP BY
+		    DATE_FORMAT(order_date, '%Y-%m')
+		ORDER BY
+		    DATE_FORMAT(order_date, '%Y-%m')
+	</select>
+	
+	
+</mapper>

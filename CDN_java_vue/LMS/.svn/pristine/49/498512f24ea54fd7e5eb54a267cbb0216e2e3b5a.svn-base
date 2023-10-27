@@ -1,0 +1,423 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>Job Korea :: 강의 관리</title>
+<!-- sweet alert import -->
+<script src='${CTX_PATH}/js/sweetalert/sweetalert.min.js'></script>
+<jsp:include page="/WEB-INF/view/common/common_include.jsp"></jsp:include>
+<script src="https://unpkg.com/axios@0.12.0/dist/axios.min.js"></script>
+<script src="https://unpkg.com/lodash@4.13.1/lodash.min.js"></script>
+
+<!-- sweet swal import -->
+
+<script type="text/javascript">
+	
+	//페이징 설정
+	var pageSize = 10;
+	var pageBlockSize = 5;
+	
+	$(function() {
+		
+		// 공지사항 조회
+		fn_searchList();
+		
+		// 버튼 이벤트 등록
+		fRegisterButtonClickEvent();
+	});	
+	
+	/** 버튼 이벤트 등록 */
+	function fRegisterButtonClickEvent() {
+		$('a[name=btn]').click(function(e) {
+			e.preventDefault();
+	
+			var btnId = $(this).attr('id');
+	
+			switch (btnId) {
+				case 'btnSave' :
+					fn_Save();
+					if($("#action").val() == "I") {
+						fn_searchList();
+				  	 } else if($("#action").val() == "U") {
+				  		fn_searchList($("#currentPageAdvice").val());
+					 } else if($("#action").val() == "D") {
+						 fn_searchList();
+					 }
+					break;
+				case 'btnDelete' :
+					fn_Delete();
+					break;
+				case 'btnClose' :
+					gfCloseModal();
+
+					fn_searchList($("#currentPageAdvice").val());
+
+					break;
+			}
+		});
+	}
+
+	// 목록 불러오기
+	function fn_searchList(currentPage) {
+		
+		var currentPage = currentPage || 1;
+		
+		var param = {
+				pageSize : pageSize,
+				currentPage : currentPage,
+				searchSel : $("#searchSel").val(),
+				searchText : $("#searchText").val(),
+				ins_id : $("#tc_id").val()
+		}
+		
+	   var listcallback = function(returndata) {
+			
+			$("#adviceList").empty().append(returndata);
+			
+			var totalcnt = $("#totalcnt").val();
+			
+			var paginationHtml = getPaginationHtml(currentPage, totalcnt, pageSize, pageBlockSize, 'fn_searchList');
+			console.log("paginationHtml : " + paginationHtml);
+			//swal(paginationHtml);
+			$("#advListPagnation").empty().append( paginationHtml );
+			
+			// 현재 페이지 설정
+			$("#currentPageAdvice").val(currentPage);
+			
+			// 검색창 비워주기
+			$("#searchText").val("");
+			
+		}
+		
+		callAjax("/tut/adviceList.do", "post", "text", true, param, listcallback);
+		
+	}
+	
+  	// 상세 팝업
+	function fn_openpopup() {
+	    	
+			initPop();
+	    	
+			// 모달 팝업
+			gfModalPop("#advicepop");
+		
+		
+    }
+	    
+	// 상담 학생 하나 클릭
+	function fn_selectAdv(std_id){
+	
+		var param = {
+				std_id : std_id
+			   ,ins_id : $("#tc_id").val()
+		}
+		
+		var listcallback = function(data){
+			// 초기 세팅
+			initPop(data.advModel);
+			console.log(data.advModel);
+			// 모달 팝업
+			gfModalPop("#advicepop");
+		}
+		
+		callAjax("/tut/selectAdv.do", "post", "json", true, param, listcallback);
+	
+	}
+	// 오늘 날짜 생성 함수
+	function getToday(){
+	    var date = new Date();
+	    var year = date.getFullYear();
+	    var month = ("0" + (1 + date.getMonth())).slice(-2);
+	    var day = ("0" + date.getDate()).slice(-2);
+
+	    return year + "-" + month + "-" + day;
+	}
+	
+	// 팝업창 열기 전 셋팅
+	function initPop(data){
+		$("#lec_nm").val(data.lec_nm).attr("readonly", true).css("background-color", "#f0f0f0");
+		$("#std_nm").val(data.std_nm).attr("readonly", true).css("background-color", "#f0f0f0");
+		$("#lec_cd").val(data.lec_cd).attr("readonly", true).css("background-color", "#f0f0f0");
+		$("#std_id").val(data.std_id).attr("readonly", true).css("background-color", "#f0f0f0");
+		$("#ins_nm").val(data.ins_nm).attr("readonly", true).css("background-color", "#f0f0f0");
+		if(data.cst_no == null || data.cst_no == "" || data.cst_no == undefined){
+			$("#action").val("I");
+			
+			$("#cst_no").val("");
+			$("#cst_date").val("");
+			selectComCombo("cls","cls_room","sel","","");
+			$("#cst_update_date").val(getToday()).attr("readonly", true).css("background-color", "#f0f0f0");
+			$("#cst_ctt").val("");
+			
+			$("#btnDelete").hide();
+		} else{
+			$("#action").val("U");
+			
+			$("#cst_no").val(data.cst_no);
+			$("#cst_date").val(data.cst_date);
+			selectComCombo("cls","cls_room","sel","",data.cls_room);
+			$("#cst_update_date").val(data.cst_update_date).attr("readonly", true).css("background-color", "#f0f0f0");
+			$("#cst_ctt").val(data.cst_ctt);
+			
+			
+			$("#btnDelete").show();
+		}
+	}
+	
+	// 저장
+	function fn_Save(){
+		
+    	if(!fValidate()) {
+    		return;
+    	}
+		
+		var param = {
+				action : $("#action").val(),
+				cst_date : $("#cst_date").val(),
+				cst_update_date : $("#cst_update_date").val(),
+				cst_ctt : $("#cst_ctt").val(),
+				cls_room : $("#cls_room").val(),
+				lec_cd : $("#lec_cd").val(),
+				std_id : $("#std_id").val(),
+				cst_no : $("#cst_no").val(),
+		}
+		
+		var listcallback = function(returnData){
+
+			swal(returnData.msg);
+   			gfCloseModal();
+			
+			if($("#action").val() == "I"){
+				fn_searchList();
+			} else if($("#action").val() == "U"){
+				fn_searchList($("#currentPageAdvice").val());
+			} else if($("#action").val() == "D"){
+				fn_searchList($("#currentPageAdvice").val());
+			}
+		}
+		
+		callAjax("/tut/saveAdv.do", "post", "json", true, param, listcallback);
+	}
+	
+
+	 
+	// 유효성 확인
+	function fValidate() {
+
+		var chk = checkNotEmpty(
+				[
+						[ "cst_date", "상담일자를 입력해 주세요." ]
+						,[ "cst_ctt", "상담내용을 입력해 주세요." ]
+						,[ "cls_room", "상담장소를 입력해 주세요." ]
+				]
+		);
+		// false가 되어야 함
+		var isValidDate = compareDates();
+
+	    if(!isValidDate) {
+	        return;
+		    };
+		if(!chk) {
+			return;
+		}
+
+		return true;
+	}
+	// 날자 비교 함수
+	function compareDates() {
+	    var cst_date_str = $("#cst_date").val(); // yyyy-MM-dd 형식의 문자열
+	    var cst_date = new Date(cst_date_str); // 문자열을 Date 객체로 변환
+	    var today = new Date();
+
+        if (today < cst_date) {
+    		console.log(cst_date)
+    		console.log(today)
+            swal("상담일이 오늘을 초과할 수 없습니다.")
+            return false;
+        }
+        return true;
+    }
+	
+	
+	
+	// 강의 삭제
+	function fn_Delete(){
+		
+		if(confirm("정말로 삭제하시겠습니까??")){
+			$("#action").val("D");
+			fn_Save();
+		}
+	}
+	
+</script>
+
+</head>
+<body>
+<form id="myForm" action=""  method="">
+	<input type="hidden" id="currentPageAdvice">
+	<input type="hidden" id="currentPageStd">
+	<input type="hidden" id="tc_id" value="${loginId}"> <!-- type="hidden" -->
+	<input type="hidden" name="action" id="action" value="">
+	<input type="hidden" name="before_cls_room" id="before_cls_room" value="">
+	<input type="hidden" name="lec_cd" id="lec_cd" value="">
+	<input type="hidden" name="std_id" id="std_id" value="">
+	<input type="hidden" name="cst_no" id="cst_no" value="">
+	
+	<!-- 모달 배경 -->
+	<div id="mask"></div>
+
+	<div id="wrap_area">
+
+		<h2 class="hidden">header 영역</h2>
+		<jsp:include page="/WEB-INF/view/common/header.jsp"></jsp:include>
+
+		<h2 class="hidden">컨텐츠 영역</h2>
+		<div id="container">
+			<ul>
+				<li class="lnb">
+					<!-- lnb 영역 --> <jsp:include
+						page="/WEB-INF/view/common/lnbMenu.jsp"></jsp:include> <!--// lnb 영역 -->
+				</li>
+				<li class="contents">
+					<!-- contents -->
+					<h3 class="hidden">contents 영역</h3> <!-- content -->
+					<div class="content">
+
+						<p class="Location">
+							<a href="../dashboard/dashboard.do" class="btn_set home">메인으로</a>
+							<span class="btn_nav bold">학습관리</span> 
+							<span class="btn_nav bold">상담 관리</span>
+							<a href="/tut/advice.do" class="btn_set refresh">새로고침</a>
+						</p>
+
+						<p class="conTitle">
+							<span>상담 목록</span> 
+							<span class="fr"> 
+								<select id="searchSel" name="searchSel">
+							         <option value="">전체</option>
+							         <option value="lectureName">강의명</option>
+							         <option value="stdName">담당교수</option>
+							    </select>
+							    <input type="text" id="searchText" name="searchText"  style="width: 200px; height: 25px;" />
+							    <a class="btnType blue" href="javascript:fn_searchList();" name="modal"><span>검색</span></a>
+							</span>
+						</p>
+						
+						<div class="divadviceList">
+							<table class="col">
+								<caption>caption</caption>
+								<colgroup>
+									<col width="10%">
+									<col width="25%">
+									<col width="20%">
+									<col width="20%">
+									<col width="10%">
+									<col width="15%">
+									
+								</colgroup>
+	
+								<thead>
+									<tr>
+										<th scope="col">순번</th>
+										<th scope="col">수강 강의</th>
+										<th scope="col">학생 이름 (ID)</th>
+										<th scope="col">상담일자</th>
+										<th scope="col">상담 여부</th>
+										<th scope="col">수정/삭제</th>
+									</tr>
+								</thead>
+								<tbody id="adviceList"></tbody>
+							</table>
+						</div>
+	
+						<div class="paging_area"  id="advListPagnation"> </div>
+						
+					
+					<h3 class="hidden">풋터 영역</h3>
+					<jsp:include page="/WEB-INF/view/common/footer.jsp"></jsp:include>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<!-- 모달팝업 -->
+	<div id="advicepop" class="layerPop layerType2" style="width: 600px;">
+		<dl>
+			<dt>
+				<strong>상담등록</strong>
+			</dt>
+			<dd class="content">
+				<!-- s : 여기에 내용입력 -->
+				<table class="row">
+					<caption>caption</caption>
+					<colgroup>
+						<col width="200px">
+						<col width="200px">
+						<col width="200px">
+						<col width="200px">
+					</colgroup>
+
+					<tbody>
+						<tr>
+							<th scope="row">강의명 </th>
+							<td >
+							<input type="text" class="inputTxt p100" name="lec_nm" id="lec_nm" />
+							</td>
+							<th scope="row">학생명 </th>
+							<td>
+							<input type="text" class="inputTxt p100" name="std_nm" id="std_nm" />
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">상담자 </th>
+							<td >
+							<input type="text" class="inputTxt p100" name="ins_nm" id="ins_nm" />
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">상담일자<span class="font_red">*</span> </th>
+							<td>
+								<input type="date" class="inputTxt p100" id="cst_date" name="cst_date"/>
+							</td>
+							<th scope="row">상담장소<span class="font_red">*</span> </th>
+							<td>
+								<select id="cls_room" name="cls_room"></select>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">최종수정일자 </th>
+							<td colspan="3">
+					      		<input type="date" class="inputTxt p100" name="cst_update_date" id="cst_update_date" />
+							</td>
+						</tr>
+						<tr>
+							<th colspan="4" scope="row">상담내용 <span class="font_red">*</span></th>
+						</tr>
+						<tr>
+							<td colspan="4">
+								<textarea  rows="50" cols="30" name="cst_ctt" id="cst_ctt" ></textarea>
+						    </td>
+						</tr>
+					</tbody>
+				</table>
+
+				<!-- e : 여기에 내용입력 -->
+
+				<div class="btn_areaC mt30">
+					<a href="" class="btnType blue" id="btnSave" name="btn"><span>저장</span></a> 
+					<a href="" class="btnType blue" id="btnDelete" name="btn"><span>삭제</span></a> 
+					<a href=""	class="btnType gray"  id="btnClose" name="btn"><span>취소</span></a>
+				</div>
+			</dd>
+		</dl>
+		<a href="" class="closePop"><span class="hidden">닫기</span></a>
+	</div>
+
+</form>
+
+<script src="${CTX_PATH}/js/view/mngadm/mngadm.js"></script>
+</body>
+</html>

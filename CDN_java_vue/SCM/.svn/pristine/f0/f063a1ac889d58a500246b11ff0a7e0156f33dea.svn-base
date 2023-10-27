@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.ScmProductDao">
+
+	<!-- 샹품 목록 조회 -->
+	<select id="productList" resultType="kr.happyjob.study.scm.model.ProductModel">
+		/*kr.happyjob.study.scm.dao.productList*/
+			 SELECT p.pro_cd
+			       ,p.ct_cd
+			       ,p.pro_nm
+			       ,p.pro_model_nm
+			       ,p.pro_sup_price
+			       ,p.pro_unit_price
+			       ,p.pro_stock
+			       ,p.pro_dt
+			       ,p.pro_mfc
+			       ,p.pro_reg_date
+			from tb_product p
+			where p.pro_delete_yn is null
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'pro_cd'.toString()">
+						and p.pro_cd Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'pro_nm'.toString()">
+						and p.pro_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'pro_mfc'.toString()">
+						and p.pro_mfc LIKE CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'pro_model_nm'.toString()">
+						and p.pro_model_nm LIKE CONCAT('%', #{searchText}, '%')
+					</when>					
+					<otherwise>
+						and (
+								p.pro_cd Like CONCAT('%', #{searchText}, '%') or
+								p.pro_nm Like CONCAT('%', #{searchText}, '%') or
+								p.pro_mfc LIKE CONCAT('%', #{searchText}, '%') or
+								p.pro_model_nm LIKE CONCAT('%', #{searchText}, '%')
+						      )
+					</otherwise>
+				</choose>
+			</if>
+		order by CAST(p.pro_cd AS SIGNED) desc
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	<!-- 상품 갯수 조회 -->
+	<select id="productTotal" resultType="int">
+		/*kr.happyjob.study.scm.dao.productTotal*/
+		select COUNT(p.pro_cd) AS tot_cnt 
+		  from tb_product p 
+		 where p.pro_delete_yn is null
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'pro_cd'.toString()">
+						and p.pro_cd Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'pro_nm'.toString()">
+						and p.pro_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'pro_mfc'.toString()">
+						and p.pro_mfc LIKE CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'pro_model_nm'.toString()">
+						and p.pro_model_nm LIKE CONCAT('%', #{searchText}, '%')
+					</when>					
+					<otherwise>
+						and (
+								p.pro_cd Like CONCAT('%', #{searchText}, '%') or
+								p.pro_nm Like CONCAT('%', #{searchText}, '%') or
+								p.pro_mfc LIKE CONCAT('%', #{searchText}, '%') or
+								p.pro_model_nm LIKE CONCAT('%', #{searchText}, '%')
+						      )
+					</otherwise>
+				</choose>
+			</if>
+	</select>
+	
+	<!-- 납품업자 리스트 조회 -->
+	<select id="supList" resultType="kr.happyjob.study.scm.model.SupplierModel">
+		 select sup_cd, 
+		        sup_nm, 
+		        sup_manager, 
+		        sup_hp, 
+		        sup_addr, 
+		        sup_email
+		   from tb_supplier
+		   where sup_delete_yn is null
+	</select>
+	
+	<!-- 상품정보 한건 조회 -->
+	<select id="productSelect" resultType="kr.happyjob.study.scm.model.ProductModel">
+			select p.pro_cd
+			      ,p.ct_cd
+			      ,p.pro_nm
+			      ,p.pro_model_nm
+			      ,p.pro_sup_price
+			      ,p.pro_unit_price
+			      ,p.pro_stock
+			      ,p.pro_dt
+			      ,p.pro_mfc
+			      ,p.pro_reg_date
+			      ,fi.file_cd
+                  ,fi.logic_path
+                  ,fi.physic_path
+                  ,fi.file_nm
+                  ,fi.file_extention
+                  ,fi.file_size
+		     from tb_product p
+  left outer join tb_file fi  on fi.pro_cd = p.pro_cd
+		    where p.pro_cd = #{pro_cd}
+	</select>
+	
+	<!-- 상품등록 -->
+	<insert id="insertProduct">
+        <selectKey resultType="string" keyProperty="pro_cd" order="BEFORE">
+              select cast((ifnull(max(cast(pro_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_product
+        </selectKey>
+	     insert into tb_product
+	                  (
+	                       pro_cd
+                         , ct_cd
+                         , pro_nm
+                         , pro_model_nm
+                         , pro_sup_price
+                         , pro_unit_price
+                         , pro_dt
+                         , pro_reg_date 
+                         , pro_mfc
+                         , pro_stock
+	                  ) values (
+	                      #{pro_cd}
+	                     ,#{ct_cd}
+	                     ,#{pro_nm}
+	                     ,#{pro_model_nm}
+	                     ,#{pro_sup_price}
+	                     ,#{pro_unit_price}
+	                     ,#{pro_dt}
+	                     , DATE_FORMAT(now(), '%Y-%m-%d')
+	                     ,#{pro_mfc}
+	                     ,0
+	                  )
+	</insert>
+
+	<!-- 납품업자 리스트 조회 -->
+	<select id="supInfo" resultType="kr.happyjob.study.scm.model.SupplierModel">
+			select sup_cd, 
+			        sup_nm, 
+			        sup_manager, 
+			        sup_hp, 
+			        sup_addr, 
+			        sup_email
+			from tb_supplier
+			where sup_cd = #{sup_cd}
+			LIMIT 1
+	</select>	
+
+	
+	<!-- 상품등록시 납품상품 테이블에 등록 -->
+	<insert id="insertSup">
+	     insert into tb_supplier_product
+	                  (
+                  	   sup_cd
+                      ,pro_cd
+	                  ) values (
+					   #{sup_cd}
+				      ,#{pro_cd}
+	                  )
+	</insert>
+	
+	
+	   <insert id="insertProductFile">
+       <selectKey resultType="string" keyProperty="file_cd" order="BEFORE">
+              select cast((ifnull(max(cast(file_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_file
+        </selectKey>
+	     insert into tb_file
+	                  (
+	                       file_cd
+                         , logic_path
+                         , physic_path
+                         , file_nm
+                         , file_extention
+                         , file_size
+                         , pro_cd
+                         , notice_cd
+                         , qna_cd
+	                  ) values (
+	                      #{file_cd}
+	                     ,#{fileinfo.vrfile_loc}
+	                     ,#{fileinfo.file_loc} 
+	                     ,#{fileinfo.file_nm} 
+	                     ,#{fileinfo.fileExtension} 
+	                     ,#{fileinfo.file_size} 
+	                     <if test="modiyn eq 'N'.toString()">
+	                     , (select cast((ifnull(max(cast(pro_cd as unsigned)) ,0)) as char(20))   from tb_product)
+	                     </if>
+	                     <if test="modiyn eq 'Y'.toString()">
+	                     ,#{pro_cd}
+	                     </if>
+	                     ,'0'
+	                     ,'0'
+	                  )
+	</insert>	
+	
+	
+	<!-- 상품 업데이트 -->
+	<update id="updateProduct">
+	       update tb_product
+	            set  ct_cd = #{ct_cd} 
+	                 , pro_nm = #{pro_nm} 
+	                 , pro_model_nm = #{pro_model_nm} 
+	                 , pro_sup_price = #{pro_sup_price} 
+	                 , pro_unit_price = #{pro_unit_price} 
+	                 , pro_dt = #{pro_dt} 
+	                 , pro_mfc = #{pro_mfc} 
+	        where pro_cd = #{pro_cd}       
+	</update> 
+	<update id="updateProductFile">
+	        update tb_file
+	             set  logic_path = #{fileinfo.vrfile_loc}
+                     , physic_path = #{fileinfo.file_loc} 
+                     , file_nm = #{fileinfo.file_nm} 
+                     , file_extention = #{fileinfo.fileExtension} 
+                     , file_size = #{fileinfo.file_size} 
+	        where file_cd = #{file_cd} 
+	</update>
+    
+    <!-- 상품 삭제 -->
+    <update id="deleteProduct">
+         update tb_product
+         	set pro_delete_yn = 1
+          where pro_cd = #{pro_cd}
+    </update>
+
+    <!-- 해당제품의 납품업체 리스트 조회 -->
+	<select id="selectSupList" resultType="kr.happyjob.study.scm.model.SupplierModel">
+		  select s.sup_cd, 
+			     s.sup_nm
+			from tb_supplier_product sp
+	   left join tb_supplier s ON s.sup_cd = sp.sup_cd
+		   where sp.pro_cd = #{pro_cd}
+	</select>	
+</mapper>

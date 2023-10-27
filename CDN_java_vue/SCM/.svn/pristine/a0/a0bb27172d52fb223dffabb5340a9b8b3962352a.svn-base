@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.NoticeDao">
+
+	<!-- 공지사항 목록 조회 -->
+	<select id="listnotice" resultType="kr.happyjob.study.scm.model.NoticeModel">
+		/*kr.happyjob.study.scm.dao.listnotice*/
+		select no.notice_cd
+               , no.notice_title
+               , no.notice_content
+               , no.notice_reg_date
+               , no.notice_update_date
+               , no.notice_read_cnt
+               , no.notice_delete_yn
+               , ui.name as loginid
+         from tb_notice no
+                inner join tb_userinfo ui on ui.loginid = no.loginid 
+         <where>
+             <if test="(searchdel != null) and (!searchdel.equals(''))">
+                     and no.notice_delete_yn = #{searchdel}
+             </if>
+             
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchsel eq 'title'.toString()">
+						and no.notice_title Like CONCAT('%', #{searchtext}, '%')
+					</when>
+					<when test="searchsel eq 'regname'.toString()">
+						and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+					</when>
+					<otherwise>
+						and (
+						             no.notice_title Like CONCAT('%', #{searchtext}, '%')
+						         or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+						      )
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		order by cast(no.notice_cd as unsigned) DESC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	<!-- 공지사항 갯수 조회 -->
+	<select id="totalnotice" resultType="int">
+		/*kr.happyjob.study.scm.dao.totalnotice*/
+		select COUNT(no.notice_cd) AS tot_cnt 
+         from tb_notice no
+                inner join tb_userinfo ui on ui.loginid = no.loginid 
+         <where>
+             <if test="(searchdel != null) and (!searchdel.equals(''))">
+                     and no.notice_delete_yn = #{searchdel}
+             </if>
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchsel eq 'title'.toString()">
+						and no.notice_title Like CONCAT('%', #{searchtext}, '%')
+					</when>
+					<when test="searchsel eq 'regname'.toString()">
+						and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+					</when>
+					<otherwise>
+						and (
+						             no.notice_title Like CONCAT('%', #{searchtext}, '%')
+						         or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+						      )
+					</otherwise>
+				</choose>
+			</if>
+		</where>	 
+	</select>
+	
+	<!-- 공지사항 목록 조회 (대시보드) -->
+	<select id="listNoticeDash" resultType="kr.happyjob.study.scm.model.NoticeModel">
+		/*kr.happyjob.study.scm.dao.listNoticeDash*/
+		select no.notice_cd
+               , no.notice_title
+               , no.notice_content
+               , no.notice_reg_date
+               , no.notice_update_date
+               , no.notice_read_cnt
+               , no.notice_delete_yn
+               , ui.name as loginid
+         from tb_notice no
+                inner join tb_userinfo ui on ui.loginid = no.loginid 
+         <where>
+         		and no.notice_delete_yn = 'N'
+             <if test="(searchdel != null) and (!searchdel.equals(''))">
+                     and no.notice_delete_yn = #{searchdel}
+             </if>
+             
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchsel eq 'title'.toString()">
+						and no.notice_title Like CONCAT('%', #{searchtext}, '%')
+					</when>
+					<when test="searchsel eq 'regname'.toString()">
+						and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+					</when>
+					<otherwise>
+						and (
+						             no.notice_title Like CONCAT('%', #{searchtext}, '%')
+						         or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+						      )
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		order by cast(no.notice_cd as unsigned) DESC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	<!-- 공지사항 갯수 조회 (대시보드) -->
+	<select id="totalNoticeDash" resultType="int">
+		/*kr.happyjob.study.scm.dao.totalNoticeDash*/
+		select COUNT(no.notice_cd) AS tot_cnt 
+         from tb_notice no
+                inner join tb_userinfo ui on ui.loginid = no.loginid 
+         <where>
+         		and no.notice_delete_yn = 'N'
+             <if test="(searchdel != null) and (!searchdel.equals(''))">
+                     and no.notice_delete_yn = #{searchdel}
+             </if>
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchsel eq 'title'.toString()">
+						and no.notice_title Like CONCAT('%', #{searchtext}, '%')
+					</when>
+					<when test="searchsel eq 'regname'.toString()">
+						and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+					</when>
+					<otherwise>
+						and (
+						             no.notice_title Like CONCAT('%', #{searchtext}, '%')
+						         or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+						      )
+					</otherwise>
+				</choose>
+			</if>
+		</where>	 
+	</select>
+	
+	<insert id="insertnotice">
+       <selectKey resultType="string" keyProperty="notice_cd" order="BEFORE">
+              select cast((ifnull(max(cast(notice_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_notice
+        </selectKey>
+	     insert into tb_notice
+	                  (
+	                       notice_cd
+                         , notice_title
+                         , notice_content
+                         , notice_reg_date
+                         , notice_update_date
+                         , notice_read_cnt
+                         , notice_delete_yn
+                         , loginid 
+	                  ) values (
+	                      #{notice_cd}
+	                     ,#{notice_title}
+	                     ,#{notice_content} 
+	                     , DATE_FORMAT(now(), '%Y-%m-%d')
+	                     ,''
+	                     ,0
+	                     ,'N'
+	                     ,#{loginid} 
+	                  )
+	</insert>
+	
+	
+	<select id="noticeselect" resultType="kr.happyjob.study.scm.model.NoticeModel">
+	     select no.notice_cd
+               , no.notice_title
+               , no.notice_content
+               , no.notice_reg_date
+               , no.notice_update_date
+               , no.notice_read_cnt
+               , no.notice_delete_yn
+               , ui.name as loginid
+               , fi.file_cd
+               , fi.logic_path
+               , fi.physic_path
+               , fi.file_nm
+               , fi.file_extention
+               , fi.file_size
+         from tb_notice no
+                inner join tb_userinfo ui on ui.loginid = no.loginid 
+                left outer join tb_file fi  on fi.notice_cd = no.notice_cd
+        where  no.notice_cd = #{notice_cd}        
+	</select>
+	
+	<update id="noticereadcntup">
+	     update tb_notice
+	          set notice_read_cnt = notice_read_cnt + 1
+	      where  notice_cd = #{notice_cd} 
+	</update>
+	
+	<update id="updatenotice">
+	       update tb_notice
+	            set  notice_title = #{notice_title}
+                    , notice_content = #{notice_content} 
+	                , notice_update_date = DATE_FORMAT(now(), '%Y-%m-%d')
+	        where notice_cd = #{notice_cd}       
+	</update> 
+
+    <delete id="deletenotice">
+          update tb_notice
+                set notice_delete_yn = 'Y'
+           where notice_cd = #{notice_cd}    
+    </delete>
+    
+    
+    <insert id="insertnoticefile">
+       <selectKey resultType="string" keyProperty="notice_cd" order="BEFORE">
+              select cast((ifnull(max(cast(notice_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_notice
+        </selectKey>
+	     insert into tb_notice
+	                  (
+	                       notice_cd
+                         , notice_title
+                         , notice_content
+                         , notice_reg_date
+                         , notice_update_date
+                         , notice_read_cnt
+                         , notice_delete_yn
+                         , loginid 
+	                  ) values (
+	                      #{notice_cd}
+	                     ,#{notice_titlefile}
+	                     ,#{notice_contentfile} 
+	                     , DATE_FORMAT(now(), '%Y-%m-%d')
+	                     ,''
+	                     ,0
+	                     ,'N'
+	                     ,#{loginid} 
+	                  )
+	</insert>
+    
+   <insert id="insertnoticefileinfo">
+       <selectKey resultType="string" keyProperty="file_cd" order="BEFORE">
+              select cast((ifnull(max(cast(file_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_file
+        </selectKey>
+	     insert into tb_file
+	                  (
+	                       file_cd
+                         , logic_path
+                         , physic_path
+                         , file_nm
+                         , file_extention
+                         , file_size
+                         , pro_cd
+                         , notice_cd
+                         , qna_cd
+	                  ) values (
+	                      #{file_cd}
+	                     ,#{fileinfo.vrfile_loc}
+	                     ,#{fileinfo.file_loc} 
+	                     ,#{fileinfo.file_nm} 
+	                     ,#{fileinfo.fileExtension} 
+	                     ,#{fileinfo.file_size} 
+	                     ,'0'
+	                     <if test="modiyn eq 'N'.toString()">
+	                     , (select cast((ifnull(max(cast(notice_cd as unsigned)) ,0)) as char(20))   from tb_notice)
+	                     </if>
+	                     <if test="modiyn eq 'Y'.toString()">
+	                     ,#{notice_cd}
+	                     </if>
+	                     ,'0'
+	                  )
+	</insert>	
+	
+	<update id="updatenoticefile">
+	       update tb_notice
+	            set  notice_title = #{notice_titlefile}
+                    , notice_content = #{notice_contentfile} 
+	                , notice_update_date = DATE_FORMAT(now(), '%Y-%m-%d')
+	        where notice_cd = #{selnoticecd}       
+	</update> 
+	
+	<update id="updatenoticefileinfo">
+	        update tb_file
+	             set  logic_path = #{fileinfo.vrfile_loc}
+                     , physic_path = #{fileinfo.file_loc} 
+                     , file_nm = #{fileinfo.file_nm} 
+                     , file_extention = #{fileinfo.fileExtension} 
+                     , file_size = #{fileinfo.file_size} 
+	        where file_cd = #{file_cd} 
+	
+	</update>
+	
+</mapper>

@@ -1,0 +1,288 @@
+package kr.happyjob.study.cus.controller;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.cus.model.CartModel;
+import kr.happyjob.study.cus.model.ProductModel;
+import kr.happyjob.study.cus.service.CartService;
+
+
+@Controller
+@RequestMapping("/cus/")
+public class CartController {
+
+	@Autowired
+	CartService cartService;
+
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+
+	/**
+	 * 장바구니 목록 초기화면
+	 */
+	@RequestMapping("cart.do")
+	public String cart(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+
+		logger.info("+ Start " + className + ".product");
+		logger.info("   - paramMap : " + paramMap);
+
+		logger.info("+ End " + className + ".product");
+
+		return "cus/Cart";
+	}
+	
+	/**
+	 * 장바구니 목록 초기화면 (Vue)
+	 */
+	@RequestMapping("cartvue.do")
+	public String cartVue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+
+		logger.info("+ Start " + className + ".cartVue");
+		logger.info("   - paramMap : " + paramMap);
+
+		logger.info("+ End " + className + ".cartVue");
+
+		return "cus/vueCart";
+	}
+
+	/**
+	 * 장바구니 목록
+	 */
+	@RequestMapping("listCart.do")
+	public String listCart(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+
+		logger.info("+ Start " + className + ".listCart");
+		logger.info("   - paramMap : " + paramMap);
+
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));
+		int currntPage = Integer.parseInt((String) paramMap.get("currntPage"));
+		int startpoint = (currntPage - 1) * pageSize;
+
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+
+		List<CartModel> listCart = cartService.listCart(paramMap);
+		
+		int totalcnt = cartService.totalCart(paramMap);
+
+		model.addAttribute("listCart", listCart);
+		model.addAttribute("totalcnt", totalcnt);
+
+		logger.info("+ End " + className + ".listCart");
+
+		return "cus/CartList";
+	}
+	
+	/**
+	 * 장바구니 목록 (Vue)
+	 */
+	@RequestMapping("listCartvue.do")
+	@ResponseBody
+	public Map<String, Object> listCartvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+
+		logger.info("+ Start " + className + ".listCartvue");
+		logger.info("   - paramMap : " + paramMap);
+
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));
+		int currntPage = Integer.parseInt((String) paramMap.get("currntPage"));
+		int startpoint = (currntPage - 1) * pageSize;
+
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+
+		List<CartModel> listCart = cartService.listCart(paramMap);
+		
+		int totalcnt = cartService.totalCart(paramMap);
+		
+		Map<String, Object> returnMap = new HashMap<String, Object>();
+
+		returnMap.put("listCart", listCart);
+		returnMap.put("totalCnt", totalcnt);
+		
+		logger.info("+ End " + className + ".listCartvue");
+
+		return returnMap;
+	}
+	
+	/**
+	 * 장바구니 삭제(단건)
+	 */
+	@RequestMapping("deleteOneCart.do")
+	@ResponseBody
+	public Map<String, Object> deleteOneCart(Model model, @RequestParam Map<String, Object> paramMap, 
+			HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".deleteOneCart");
+		logger.info("   - paramMap : " + paramMap);
+		
+		int sqlreturn = 0;
+
+		paramMap.put("loginid", session.getAttribute("loginId"));
+
+		sqlreturn = cartService.deleteCart(paramMap);
+
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+
+		if (sqlreturn >= 0) {
+			returnmap.put("result", "SUCCESS");
+		} else {
+			returnmap.put("result", "FAIL");
+		}
+
+		logger.info("+ End " + className + ".deleteOneCart");
+
+		return returnmap;
+	}
+	
+	/**
+	 * 장바구니 삭제
+	 */
+	@RequestMapping("deleteCart.do")
+	@ResponseBody
+	public Map<String, Object> deleteCart(Model model, @RequestParam(value = "paramArr[]") List<String> paramArr, 
+			HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception {
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		
+		logger.info("+ Start " + className + ".deleteCart");
+		logger.info("   - paramArr : " + paramArr);
+		
+		int sqlreturn = 0;
+
+		paramMap.put("loginid", session.getAttribute("loginId"));
+
+		ArrayList<String> list = new ArrayList<String>();
+		
+		for(String pro_cd : paramArr){
+			logger.info("   - pro_cd : " + pro_cd);
+			list.add(pro_cd);
+		}
+		paramMap.put("pro_cdList", list);
+		logger.info("   - paramMap222: " + paramMap);
+		
+		sqlreturn = cartService.selectDeleteCart(paramMap);
+
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+
+		if (sqlreturn >= 0) {
+			returnmap.put("result", "SUCCESS");
+		} else {
+			returnmap.put("result", "FAIL");
+		}
+
+		logger.info("+ End " + className + ".deleteCart");
+
+		return returnmap;
+	}
+	
+	/**
+	 * 단건조회
+	 */
+	@RequestMapping("selectAccount.do")
+	@ResponseBody
+	public Map<String, Object> selectProduct(Model model, @RequestParam Map<String, Object> paramMap,
+			HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception {
+
+		logger.info("+ Start " + className + ".selectProduct");
+		logger.info("   - paramMap : " + paramMap);
+
+		CartModel selectAccount = cartService.selectAccount(paramMap);
+
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+
+		returnmap.put("selectAccount", selectAccount);
+
+		logger.info("+ End " + className + ".selectProduct");
+
+		return returnmap;
+	}
+	
+	@RequestMapping("orderCart.do")
+	@ResponseBody
+	public Map<String, Object> orderCart(Model model, @RequestParam(value = "ctOrderArrayList") String[] paramArr, 
+			HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".orderCart");
+		//logger.info("   - paramMap : " + paramMap);
+		logger.info("   - paramArr : " + paramArr.length);
+		
+		int sqlreturn = 0;
+		
+		HashMap commandMap = new HashMap(); //파라미터로 넘길 맵
+		List<HashMap> defaultList = new ArrayList<HashMap>();
+		
+		
+		ArrayList<String> list = new ArrayList<String>();
+		
+		for(String item : paramArr) {
+			// for 문 안에 paramMap 설정하여 paramMap 초기화
+			Map<String, Object> paramMap = new HashMap<String, Object>();
+			logger.info("   - item : " + item);
+			
+			String[] ele = item.split("/");
+			
+			for(String eleitem : ele) {
+				
+				eleitem = eleitem.replace("[", "").replace("]", "").replace("\"", "");
+				logger.info("   - eleitem : " + eleitem);
+				list.add(eleitem);
+				
+			}
+			
+			paramMap.put("pro_cd", list.get(0));
+			paramMap.put("cart_cnt", list.get(1));
+			paramMap.put("order_price", list.get(2));
+			paramMap.put("order_hope_date", list.get(3));
+			paramMap.put("loginid", session.getAttribute("loginId"));
+			logger.info("   - paramMap : " + paramMap);
+			
+			defaultList.add((HashMap) paramMap);
+			logger.info("  defaultList =========================== "+defaultList);
+			list.clear();
+			
+		}
+		commandMap.put("defaultList", defaultList);
+		logger.info("  commandMap =========================== "+commandMap);
+		
+		sqlreturn = cartService.orderCart(commandMap);
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+
+		if (sqlreturn >= 0) {
+			returnmap.put("result", "SUCCESS");
+		} else {
+			returnmap.put("result", "FAIL");
+		}
+
+		logger.info("+ End " + className + ".orderCart");
+
+		return returnmap;
+	}
+	
+}

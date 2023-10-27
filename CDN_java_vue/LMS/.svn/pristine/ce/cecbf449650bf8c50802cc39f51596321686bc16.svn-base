@@ -1,0 +1,180 @@
+package kr.happyjob.study.sptins.controller;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.sptins.model.FileInfoModel;
+import kr.happyjob.study.sptins.model.LearningMaterialModel;
+import kr.happyjob.study.sptins.service.LearningMaterialService;
+
+
+@Controller
+@RequestMapping("/tut/")
+public class LearningMaterialsController {
+	
+	@Autowired
+	LearningMaterialService lmService;
+	
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+
+	/** 학습자료 초기 화면
+	 * @return view jsp
+	 * @author 김정욱
+	 */
+	@RequestMapping("b_learningMaterials.do")
+	public String b_learningMaterials(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".b_learningMaterials");
+		logger.info("   - paramMap : " + paramMap);
+
+		logger.info("+ end " + className + ".b_learningMaterials");
+
+		return "sptins/learningMaterials";
+		
+	}
+	
+	
+	/** 주차 목록 불러오기
+	 * @return view jsp
+	 * @author 김정욱
+	 */
+	@RequestMapping("lmFindWeeklyList.do")
+	public String lmFindWeeklyList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".lmFindWeeklyList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		paramMap.put("loginId", session.getAttribute("loginId").toString());
+		
+		List<LearningMaterialModel> weeklyList = lmService.lmFindWeeklyList(paramMap);
+		int totalcnt = weeklyList.size();
+		
+		model.addAttribute("weeklyList", weeklyList);
+		model.addAttribute("totalcnt", totalcnt);
+
+		logger.info("+ end " + className + ".lmFindWeeklyList");
+
+		return "sptins/learningMaterialsWeeklyList";
+		
+	}
+	
+	
+	/** 주차관련 정보 불러오기
+	 * @return view jsp
+	 * @author 김정욱
+	 */
+	@ResponseBody
+	@RequestMapping("findFileInfo.do")
+	public FileInfoModel findFileInfo(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".findFileInfo");
+		logger.info("   - paramMap : " + paramMap);
+		
+		Map<String, Object> returnMap = new HashMap<>();
+		FileInfoModel fileInfo = lmService.findFileInfo(paramMap);
+		
+		returnMap.put("fileInfo", fileInfo);
+		
+		
+
+		logger.info("+ end " + className + ".findFileInfo");
+
+		return fileInfo;
+		
+	}
+	
+	
+	/** 학습자료 저장하기
+	 * @return 성공 여부
+	 * @author 김정욱
+	 */
+	@ResponseBody
+	@RequestMapping("saveFile.do")
+	public Map<String, Object> saveFile(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".saveFile");
+		logger.info("   - paramMap : " + paramMap);
+	
+		String msg = null;
+		String action = paramMap.get("action").toString();
+		
+		// 신규 저장
+		if(action.equals("I")){
+			msg = lmService.insertFile(paramMap,request);
+		
+		// 파일 갱신	
+		} else if(action.equals("U")){
+			msg = lmService.updateFile(paramMap,request);
+			
+		// 파일 삭제	
+		} else {
+			msg = lmService.deleteFile(paramMap,request);
+		}
+		
+		Map<String, Object> returnMap = new HashMap<>();
+		returnMap.put("msg", msg);
+		
+		logger.info("+ end " + className + ".saveFile");
+
+		return returnMap;
+		
+	} 
+
+	
+	/**
+	 * 첨부파일 다운로드
+	 */
+	@RequestMapping("lecFiledownload.do")
+	public void lecFiledownload(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+	
+		logger.info("+ Start " + className + ".lecFiledownload");
+		logger.info("   - paramMap : " + paramMap);
+		
+		// 첨부파일 조회
+		FileInfoModel fileInfo = lmService.lecFiledownload(paramMap);
+		
+		// sectinfo.getFile_nm()  첨부 파일명
+		// sectinfo.getPhysic_path()  물리경로  X:\.....
+		
+		byte fileByte[] = FileUtils.readFileToByteArray(new File(fileInfo.getLec_file_path()));
+		
+		response.setContentType("application/octet-stream");
+	    response.setContentLength(fileByte.length);
+	    response.setHeader("Content-Disposition", "attachment; fileName=\"" + URLEncoder.encode(fileInfo.getLec_file_nm(),"UTF-8")+"\";");
+	    response.setHeader("Content-Transfer-Encoding", "binary");
+	    response.getOutputStream().write(fileByte);
+	     
+	    response.getOutputStream().flush();
+	    response.getOutputStream().close();
+
+		logger.info("+ End " + className + ".lecFiledownload");
+	}
+	
+}

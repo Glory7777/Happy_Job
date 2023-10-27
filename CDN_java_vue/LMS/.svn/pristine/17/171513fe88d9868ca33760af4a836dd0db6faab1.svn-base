@@ -1,0 +1,89 @@
+package kr.happyjob.study.cmtstd.service;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import kr.happyjob.study.cmtstd.dao.QnaDao;
+import kr.happyjob.study.cmtstd.model.QnaModel;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+@Service
+public class QnaServiceImpl implements QnaService {
+
+   private QnaDao qnaDao;
+
+   // Set logger
+   private final Logger logger = LogManager.getLogger(this.getClass());
+
+   // Get class name for logger
+   private final String className = this.getClass().toString();
+
+   @Autowired
+   public QnaServiceImpl(QnaDao dao) {
+      super();
+      this.qnaDao = dao;
+   }
+
+   // 전체리스트
+   public List<QnaModel> qnaList(Map<String, Object> paramMap) throws Exception {
+      logger.info("qnaList ::: 통과");
+
+      return qnaDao.qnaList(paramMap);
+
+   }
+
+   // 전체카운트
+   public int totalqna(Map<String, Object> paramMap) throws Exception {
+
+      return qnaDao.totalqna(paramMap);
+   }
+
+   // 단건조회
+
+   public QnaModel qnaselect(Map<String, Object> paramMap) throws Exception {
+
+      qnaDao.qnacntup(paramMap);
+
+      return qnaDao.qnaselect(paramMap);
+   }
+
+   /** qna 등록 */
+   public int insertqna(Map<String, Object> paramMap) throws Exception {
+
+      return qnaDao.insertqna(paramMap);
+   }
+
+   public int updateqna(Map<String, Object> paramMap) throws Exception {
+
+      return qnaDao.updateqna(paramMap);
+   }
+
+   
+     public int commentqna(Map<String, Object> paramMap) throws Exception{
+    
+    	qnaDao.ans_yn(paramMap);
+    	 
+        return qnaDao.commentqna(paramMap);
+     
+     }
+    
+
+   public int deletenotice(Map<String, Object> paramMap) throws Exception {
+
+      return qnaDao.deletenotice(paramMap);
+   }
+  
+   
+   public int updatecomment(Map<String, Object> paramMap) throws Exception {
+
+	      return qnaDao.updatecomment(paramMap);
+  }
+   
+   
+   
+}

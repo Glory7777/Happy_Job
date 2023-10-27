@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.pcm.dao.PcmSupplierDao">
+	<!-- 납품업체 목록 조회 -->
+	<select id="supplierList" resultType="kr.happyjob.study.pcm.model.PcmSupplierModel">
+		/*kr.happyjob.study.pcm.dao.supplierList*/
+		select s.sup_cd
+			  ,s.sup_nm
+			  ,s.sup_manager
+			  ,s.sup_hp
+			  ,s.sup_addr
+			  ,s.sup_email
+		  from tb_supplier s
+		  where s.sup_delete_yn is null
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and s.sup_nm Like CONCAT('%', #{searchText}, '%')
+			</if>
+ 		order by s.sup_cd DESC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	<!-- 공지사항 갯수 조회 -->
+	<select id="supplierTotal" resultType="int">
+		/*kr.happyjob.study.pcm.dao.supplierTotal*/
+		select count(s.sup_cd) as tot_cnt
+		  from tb_supplier s
+		  where s.sup_delete_yn is null
+		<if test="(searchText != null) and (!searchText.equals(''))">
+			and s.sup_nm Like CONCAT('%', #{searchText}, '%')
+		</if>
+	</select>
+	
+	
+</mapper>

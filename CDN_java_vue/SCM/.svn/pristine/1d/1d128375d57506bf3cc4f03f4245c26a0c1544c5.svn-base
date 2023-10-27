@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.dlm.dao.StockedDao">
+
+	<!-- 입고 처리를 위한 발주 리스트 -->
+	<select id="stockedList" resultType="kr.happyjob.study.dlm.model.StockedModel">
+		
+		select pu.pur_cd,		<!-- 발주 코드 -->
+	              pr.pro_cd, 	<!-- 상품 코드 -->
+	              pr.pro_nm,	<!-- 상품명 -->
+	              pr.pro_mfc,	<!-- 제조사 -->
+	              pu.sup_cd, 	<!-- 납품 업체 코드 -->
+	              su.sup_nm,	<!-- 납품 업체명 -->
+	              pr.pro_stock,	<!-- 재고 -->
+	              pu.pur_cnt,	<!-- 발주 수량 -->
+	              pu.pur_appr,		<!-- 발주 승인 -->
+	              a.name as del_nm, 	<!-- 배송 담당 -->
+	              pu.pur_stk_date, 	<!-- 입고 일자 -->
+	              pu.pur_stk_cnt	<!-- 입고 수량 -->
+	      from tb_purchase pu
+	              inner join tb_product pr on pu.pro_cd = pr.pro_cd
+	              inner join tb_supplier su on pu.sup_cd = su.sup_cd
+	              left join (select name, loginid from tb_userinfo) a on a.loginid = pu.pur_del       
+	      
+	      where pu.pur_appr in ('2', '3')
+		   		             	
+             	<if test="searchStk eq 'true'">
+                     and pu.pur_appr = '2'
+             	</if>                      	
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'supplier'">
+							and su.sup_nm LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or su.sup_nm LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+	      
+	      order by cast(pu.pur_cd as unsigned) DESC
+		  LIMIT #{startPoint}, #{pageSize} 		
+		
+	</select>
+
+	<select id="totalCnt" resultType="int">
+		
+		select Count(pu.pur_cd)
+		  from tb_purchase pu
+	              inner join tb_product pr on pu.pro_cd = pr.pro_cd
+	              inner join tb_supplier su on pu.sup_cd = su.sup_cd
+	              left join (select name, loginid from tb_userinfo) a on a.loginid = pu.pur_del       
+	      
+	      where pu.pur_appr in ('2', '3')
+		   		
+             	<if test="searchStk eq 'true'">
+                     and pu.pur_appr = '2'
+             	</if>
+		               
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					<choose>
+						<when test="searchsel eq 'product'">
+							and pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+						</when>
+						<when test="searchsel eq 'supplier'">
+							and su.sup_nm LIKE CONCAT('%', #{searchtext}, '%')
+						</when>
+						<otherwise>
+							and (
+							             pr.pro_nm Like CONCAT('%', #{searchtext}, '%')
+							         or su.sup_nm LIKE CONCAT('%', #{searchtext}, '%') 
+							      )
+						</otherwise>
+					</choose>
+				</if>
+		
+	</select>
+	
+	<!-- 입고 완료 처리를 위해 발주 정보 업데이트 -->
+	<update id="stockUpdate">
+		update tb_purchase
+					set pur_del = #{loginid}, pur_stk_date = DATE_FORMAT(now(), '%Y-%m-%d'), 
+					      pur_appr = '3', pur_stk_cnt = #{pur_stk_cnt}
+					where pur_cd = #{pur_cd}
+	</update>
+
+	<!-- 상품 테이블에 입고 수량만큼 재고 업데이트 -->
+	<update id="productStockUpdate">
+		update tb_product
+					set pro_stock = pro_stock + #{pur_stk_cnt}
+					where pro_cd = #{pro_cd}
+	</update>
+
+	
+	<!-- 납품 업체 정보 -->
+	<select id="selectSup" resultType="kr.happyjob.study.dlm.model.SupplierInfoModel">
+		select CAST(sup_cd AS SIGNED) AS sup_cd,
+				  sup_nm,
+				  sup_manager,
+				  sup_hp,
+				  sup_addr,
+				  sup_email
+	      from tb_supplier su	     
+	      where sup_cd  = #{sup_cd}
+	</select>
+
+
+</mapper>

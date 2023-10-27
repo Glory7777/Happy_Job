@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.jobadm.dao.JobDao">
+
+	<!-- 장비사항 목록 조회 -->
+	<select id = "listJob" resultType = "kr.happyjob.study.jobadm.model.JobModel">
+			/*kr.happy.study.jobadm.dao.JobDao.listJob*/
+			SELECT  ui.loginID
+			      , ui.user_type
+			      , ui.name
+			      , ui.sex
+			      , ui.hp
+			      , ui.email
+			      , ui.regdate
+			      , ui.addr
+			      , ui.birthday
+			      , ui.lecture
+			      , ui.status_yn
+			      , ui.secession_date
+			      , ui.secession
+			      , jm.join_date
+			      , jm.leave_date
+			      , jm.com_nm
+			      , jm.job_ctg
+			      , jm.reg_yn
+			FROM    tb_userinfo ui
+			LEFT JOIN tb_job_mng jm ON ui.loginID=jm.loginID
+			WHERE ui.user_type = 'A'
+			AND   ui.secession != "Y"
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and ui.name Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'ID'.toString()">
+						and ui.loginID Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'company'.toString()">
+						and jm.com_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (ui.name Like CONCAT('%', #{searchText}, '%')
+						or ui.loginID Like CONCAT('%', #{searchText}, '%')
+						or jm.com_nm Like CONCAT('%', #{searchText}, '%')	)
+					</otherwise>
+				</choose>
+			</if>
+		order by ui.regdate DESC
+		LIMIT #{startPoint}, #{pageSize}
+	</select> <!-- 8.셀렉문으로 셀렉 -->
+	
+		
+	<!-- 학생 목록 총 갯수 조회 -->
+	<select id="totalCnt" resultType="int">
+		/*kr.happy.study.jobadm.dao.JobDao.totalCnt*/
+		SELECT    COUNT(ui.loginID) as tot_Cnt
+		FROM      tb_userinfo ui
+		LEFT JOIN tb_job_mng jm ON ui.loginID=jm.loginID
+		WHERE     ui.user_type = 'A'
+		AND       ui.secession != "Y"
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and ui.name Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'ID'.toString()">
+						and ui.loginID Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'company'.toString()">
+						and jm.com_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (ui.name Like CONCAT('%', #{searchText}, '%')
+						or ui.loginID Like CONCAT('%', #{searchText}, '%')
+						or jm.com_nm Like CONCAT('%', #{searchText}, '%')	)
+					</otherwise>
+				</choose>
+			</if>
+	</select>	<!-- 10.셀렉문으로 카운터해서 데이터량 정하기 -->
+		
+ 	
+ 	<!-- 학생이력서 단건 조회 : 학생이름 클릭시 -->
+	<select id = "selectJob" resultType = "kr.happyjob.study.jobadm.model.JobModel">
+		/*kr.happy.study.jobadm.dao.JobDao.selectJob*/
+			SELECT  ui.loginID
+			      , ui.user_type
+			      , ui.name
+			      , ui.sex
+			      , ui.hp
+			      , ui.email
+			      , ui.regdate
+			      , ui.addr
+			      , ui.birthday
+			      , ui.lecture
+			      , ui.status_yn
+			      , ui.secession_date
+			      , ui.secession
+			      , jm.join_date
+			      , jm.leave_date
+			      , jm.com_nm
+			      , jm.job_ctg
+			      , jm.reg_yn
+			FROM    tb_userinfo ui
+			LEFT JOIN tb_job_mng jm ON ui.loginID=jm.loginID
+		WHERE ui.loginID = #{loginID}    
+	</select>  
+	
+	
+	<!-- 학생 취업정보 신규(저장)-->
+	<insert id="insertJob" parameterType="Map">
+	/*kr.happy.study.jobadm.dao.JobDao.insertJob*/
+    INSERT INTO tb_job_mng
+                  (
+                   loginID
+                 , join_date
+                 , leave_date
+                 , com_nm
+                 , job_ctg
+                 , reg_yn
+                  )
+                  values (
+                      #{loginID}
+                     ,#{join_date}
+                     ,#{leave_date}
+                     ,#{com_nm}
+                     ,#{job_ctg}
+                     ,"Y"
+                  )
+	</insert>  
+	
+	<!-- 정보 수정>-->
+    <update id="updateJob">
+	/*kr.happy.study.jobadm.dao.JobDao.updateJob*/
+        UPDATE tb_job_mng
+        SET  
+              join_date = #{join_date}
+            , leave_date = #{leave_date}
+            , com_nm = #{com_nm}
+            , job_ctg = #{job_ctg}
+        WHERE loginID = #{loginID};
+    </update>
+
+	<!-- 삭제 -->  
+    <delete id="deleteJob">
+    /*kr.happy.study.jobadm.dao.JobDao.deleteJob*/
+	    DELETE FROM tb_job_mng
+	     WHERE loginID = #{loginID};
+    </delete> 
+</mapper>

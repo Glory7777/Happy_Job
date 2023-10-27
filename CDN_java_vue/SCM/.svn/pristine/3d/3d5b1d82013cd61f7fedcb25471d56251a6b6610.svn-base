@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.exe.dao.ProductStatDao">
+	
+	<!-- 매출현황 조회 -->
+	<select id="productList" resultType="kr.happyjob.study.exe.model.ProductModel">
+		select p.pro_cd 
+			, p.pro_nm 
+			, p.pro_stock 
+			, p.pro_delete_yn
+			, IFNULL(sum(ord.order_cnt),0) AS total_sales_cnt
+			, IFNULL(sum(ord.order_price), 0) AS total_sales
+		from tb_product p
+	left join tb_order ord ON p.pro_cd = ord.pro_cd
+	left join tb_refund rf ON ord.pro_cd = rf.pro_cd
+		<where>
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				p.pro_nm LIKE CONCAT('%', #{searchText}, '%')
+			</if>	
+		</where>
+	group by p.pro_cd
+	LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	<!-- 매출현황 갯수 조회 -->
+	<select id="productTotal" resultType="int">
+		/*kr.happyjob.study.exe.dao.productTotal*/
+		select count(*) as tot_cnt
+		  from tb_product p
+			<where>
+				<if test="(searchText != null) and (!searchText.equals(''))">
+					p.pro_nm LIKE CONCAT('%', #{searchText}, '%')
+				</if>	
+			</where>
+	</select>
+	
+	
+	
+
+
+	<!-- 상품별 매출 상세 조회 -->
+	<select id="dtList" resultType="kr.happyjob.study.exe.model.SalesDetailModel">
+		/*kr.happyjob.study.exe.dao.dtList*/
+		select ord.order_cd
+		     , ord.pro_cd
+		     , p.pro_nm
+		     , ui.name
+		     , ord.order_date
+		     , ord.order_price  as order_price
+		     , ord.order_cnt  as order_cnt
+		from tb_order ord
+		inner join tb_userinfo ui on ui.loginid = ord.loginid
+		inner join tb_product p on p.pro_cd = ord.pro_cd
+		where ord.pro_cd = #{pro_cd}
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	<!-- 상품별 매출 상세  갯수 조회 -->
+	<select id="dtTotal" resultType="int">
+		/*kr.happyjob.study.exe.dao.dtTotal*/
+		select count(*) as tot_cnt
+		  from tb_order ord
+		 where ord.pro_cd = #{pro_cd}
+	</select>
+	
+	
+	<select id="productPieChart" resultType="kr.happyjob.study.exe.model.PieChartData">
+	   select p.pro_cd 
+			, p.pro_nm 
+			, IFNULL(ROUND(sum(ord.order_price)/10000 , 1), 0) AS total_sales
+		 from tb_product p
+	left join tb_order ord ON p.pro_cd = ord.pro_cd
+	left join tb_refund rf ON ord.pro_cd = rf.pro_cd
+	 group by p.pro_cd
+	</select>
+	
+	
+	
+</mapper>

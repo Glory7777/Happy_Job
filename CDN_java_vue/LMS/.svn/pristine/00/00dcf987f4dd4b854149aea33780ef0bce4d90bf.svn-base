@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.prsadm.dao.InsDao">
+
+	<!-- 장비사항 목록 조회 -->
+	<select id = "listIns" resultType = "kr.happyjob.study.prsadm.model.InsModel">
+			/*kr.happy.study.prsadm.dao.IntDao.listInt*/
+		SELECT loginID
+		     , user_type
+		     , name
+		     , password
+		     , sex
+		     , hp
+		     , email
+		     , regdate
+		     , addr
+		     , birthday
+		     , lecture
+		     , status_yn
+		     , secession_date
+		     , secession
+		  FROM tb_userinfo
+		 WHERE user_type = "B"
+		   AND secession != "Y"
+ 			<if test="(selStatus != null) and (!selStatus.equals(''))">
+                      AND   status_yn != "Y"
+             </if>
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and name Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'ID'.toString()">
+						and loginID Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'statusYN'.toString()">
+						and status_yn Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (name Like CONCAT('%', #{searchText}, '%')
+						or loginID Like CONCAT('%', #{searchText}, '%'))
+					</otherwise>
+				</choose>
+			</if>
+		order by regdate DESC
+		LIMIT #{startPoint}, #{pageSize}
+	</select> <!-- 8.셀렉문으로 셀렉 -->
+	
+		
+	<!-- 장비사항 목록 총 갯수 조회 -->
+	<select id="totalCnt" resultType="int">
+		/*kr.happy.study.prsadm.dao.IntDao.totalCnt*/
+		SELECT COUNT(loginID) as tot_Cnt
+		  FROM tb_userinfo
+         WHERE user_type = "B"
+   		   AND secession != "Y"
+             <if test="(selStatus != null) and (!selStatus.equals(''))">
+                      AND   status_yn != "Y"
+             </if>
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and name Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'ID'.toString()">
+						and loginID Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'statusYN'.toString()">
+						and status_yn Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (name Like CONCAT('%', #{searchText}, '%')
+						or loginID Like CONCAT('%', #{searchText}, '%'))
+					</otherwise>
+				</choose>
+			</if>
+	</select>	<!-- 10.셀렉문으로 카운터해서 데이터량 정하기 -->
+		
+ 	
+ 	<!-- 장비사항 단건 조회 : 강사수정 클릭시  -->
+	<select id = "selectIns" resultType = "kr.happyjob.study.prsadm.model.InsModel">
+		/*kr.happy.study.prsadm.dao.IntDao.selectIns*/
+		SELECT loginID
+		     , user_type
+		     , name
+		     , password
+		     , sex
+		     , hp
+		     , email
+		     , regdate
+		     , addr
+		     , birthday
+		     , lecture
+		     , status_yn
+		     , secession_date
+		     , secession
+		  FROM tb_userinfo
+		WHERE loginID = #{loginID}    
+	</select>
+	
+	
+	<!-- 강사 신규등록(저장)  -->
+	<insert id="insertIns" parameterType="Map">
+	/*kr.happy.study.prsadm.dao.IntDao.insertIns*/
+    INSERT INTO tb_userinfo
+                  (
+                   loginID
+                 , user_type
+                 , name
+                 , password
+                 , sex
+                 , hp
+                 , email
+                 , regdate
+                 , addr
+                 , birthday
+                 , status_yn
+                 , secession
+                  )
+                  values (
+                      #{loginID}
+                     ,'B'
+                     ,#{name}
+                     ,#{password} 
+                     ,#{sex} 
+                     ,#{hp} 
+                     ,#{email} 
+                     ,DATE_FORMAT(now(), '%Y-%m-%d')
+                     ,#{addr} 
+                     ,#{birthday} 
+                     ,'N'
+                     ,'N'
+                  )
+	</insert>
+	
+	<!-- 정보 수정-->
+    <update id="updateIns">
+	/*kr.happy.study.prsadm.dao.IntDao.updateIns*/
+        update tb_userinfo
+        set  loginID = #{loginID}
+           , password = #{password}
+           , name = #{name}
+           , sex = #{sex}
+           , hp = #{hp}
+           , addr = #{addr}
+           , birthday = #{birthday}
+           , email = #{email}
+        where loginID = #{loginID};
+    </update>
+
+	<!-- 삭제  -->
+    <update id="deleteIns">
+    /*kr.happy.study.prsadm.dao.IntDao.deleteIns*/
+	       update tb_userinfo
+              set secession = "Y"
+                , secession_date = DATE_FORMAT(now(), '%Y-%m-%d')
+	        where loginID = #{loginID};;
+    </update> 
+    
+    <!-- 미승인 -> 승인 -->
+    <update id="statusY">
+    /*kr.happy.study.prsadm.dao.IntDao.statusY*/
+    	UPDATE tb_userinfo
+    	SET    status_yn = "Y"
+    	WHERE  loginID = #{loginID};
+    </update>
+    <!-- 승인 -> 미승인-->
+    <update id="statusN">
+    /*kr.happy.study.prsadm.dao.IntDao.statusN*/
+    	UPDATE tb_userinfo
+    	SET    status_yn = "N"
+    	WHERE  loginID = #{loginID};
+    </update>
+	
+</mapper>

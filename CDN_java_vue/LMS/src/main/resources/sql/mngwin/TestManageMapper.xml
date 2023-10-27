@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngwin.dao.TestManageDao">
+
+   <!-- 수강중인 강의 목록 selectBOX -->
+   <select id="selectlist" resultType="kr.happyjob.study.sptstd.model.LectureListModel">
+      select 
+            lec_cd, 
+            lec_nm 
+         from tb_lec
+         where loginId=#{loginId}
+          AND lec_yn='N';
+   </select>
+
+
+
+   <!-- 검색바 -->
+   <select id="testAllList" resultType="kr.happyjob.study.mngwin.model.TestManageModel">
+      select A.*, B.*
+         from
+            tb_test A
+          , tb_lec B
+       where 1=1
+       and A.lec_cd = B.lec_cd
+       and B.loginID= #{loginId}
+          <if test="(selectBox != null) and (!selectBox.equals(''))">
+          and A.lec_cd like CONCAT('%', #{selectBox}, '%')
+          </if>
+   </select>
+   
+   
+   
+   
+   <!-- 총 건수 -->
+   <select id="totaltest" resultType="int">
+      select count(T.lec_cd)AS tot_cd
+      from tb_test T
+      where T.lec_cd =#{selectBox}
+       <if test="(selectBox != null) and (!selectBox.equals(''))">
+          and T.lec_cd like CONCAT('%', #{selectBox}, '%')
+       </if>   
+   </select>
+   
+   
+   
+   
+   <!-- 시험문제리스트 추가) 삭제여부가 N 인 애들만 문제보여지기-->
+   <select id="testBankList" resultType="kr.happyjob.study.mngwin.model.TestManageModel">
+      select
+          test_que_cd
+          ,test_cor_ans
+          ,test_que_ctt
+          ,test_opt_1
+          ,test_opt_2
+          ,test_opt_3
+          ,test_opt_4
+          ,test_cor_ans
+          ,test_que_type
+      from tb_test_bank
+      where tb_test_bankYN ='N';
+   </select>
+   
+   
+   <!-- 한 건 조회 -->
+   <select id="selectview" resultType="kr.happyjob.study.mngwin.model.TestManageModel">
+      select 
+         test_que_cd
+         ,test_cor_ans
+         ,test_que_ctt
+         ,test_opt_1
+         ,test_opt_2
+         ,test_opt_3
+         ,test_opt_4
+         ,test_cor_ans
+         ,test_que_type
+      from tb_test_bank
+      where test_que_cd=#{test_que_cd};   
+   </select> 
+   
+   <!--저장하기  추가 tb_test_bankYN 의 값이 기본 N으로 들어가도록-->
+   <insert id="testsave" parameterType="map">
+      <selectKey resultType="int" keyProperty="test_que_cd" order="BEFORE">      
+         SELECT COALESCE(MAX(test_que_cd), 0) + 1 FROM tb_test_bank
+       </selectKey>
+            insert into tb_test_bank
+                     (
+                     test_que_cd
+                     ,test_que_ctt
+                     ,test_opt_1
+                     ,test_opt_2
+                     ,test_opt_3
+                     ,test_opt_4
+                     ,test_cor_ans
+                     ,test_que_type
+                     ,tb_test_bankYN
+                     ) 
+            values(
+                  #{test_que_cd}
+                        ,#{test_que_ctt}
+                  ,#{test_opt_1}
+                        ,#{test_opt_2}
+                        ,#{test_opt_3}
+                        ,#{test_opt_4}
+                        ,#{test_cor_ans}
+                        ,#{test_que_type}
+                        ,'N'
+                    );
+                    
+   </insert>
+   
+   
+   <!-- 문제 수정하기 -->
+   <update id="testupdate" parameterType="map">
+      update tb_test_bank 
+         set 
+               test_que_ctt = #{test_que_ctt}
+               ,test_opt_1 = #{test_opt_1}
+               ,test_opt_2 = #{test_opt_2}
+               ,test_opt_3 = #{test_opt_3}
+               ,test_opt_4 = #{test_opt_4}
+               ,test_cor_ans = #{test_cor_ans}
+         where test_que_cd= #{test_que_cd}
+   </update>
+   
+   
+   
+   
+   <!-- 문제 삭제하기 수정 DELETE 문에서 논리적삭제로 ㅇㅇ 문제개설되면 영향을 주게됨 -->
+   <update id="testdelete" parameterType="map">
+      update tb_test_bank set 
+            tb_test_bankYN ='Y' 
+      WHERE test_que_cd=#{test_que_cd};
+   </update>
+   
+   
+   <!-- 시험지만들기  -->
+   <select id="papermade" parameterType="map" resultType="kr.happyjob.study.mngwin.model.TestManageModel">
+       SELECT * FROM tb_test_bank
+       WHERE test_que_cd IN
+       <foreach collection="test_que_cd" item="item" open="(" separator="," close=")">
+           #{item}
+       </foreach>
+   </select>
+   
+   
+   
+    
+   <!--시험등록하기  -->
+   <insert id="testregi">
+       insert into  tb_test(
+             test_nm
+             , lec_cd
+             , test_cd
+             , test_start_date
+             , test_end_date
+             )
+           values(
+               #{test_nm}
+              , #{lec_cd}
+              , #{test_cd}
+              , #{test_start_date}
+              , #{test_end_date}
+              );
+   </insert>
+   
+   
+   <!--시험의 문항 등록하기  -->
+      <insert id="insertTestCdPaper" parameterType="map">
+      INSERT INTO tb_test_paper
+          VALUES (
+                #{test_cd}
+                , #{test_que_cd}
+                , #{score}
+                , #{lec_cd}
+                );
+      </insert>
+   
+   
+   <!-- 완성된 시험지 상세보기  -->
+   <select id="detailview" resultType="kr.happyjob.study.mngwin.model.TestManageModel">
+   SELECT A.* 
+         ,B.*
+         ,C.*
+        FROM tb_test A, tb_test_paper B, tb_test_bank C 
+    WHERE 1=1
+         AND A.test_cd = B.test_cd
+         AND C.test_que_cd = B.test_que_cd
+         AND A.test_cd = #{test_cd};
+   </select>
+   
+   <!-- 시험 차수 체크 -->
+   <select id="checkTestId" resultType="String">
+   		SELECT test_cd
+   		  FROM tb_test
+   		 WHERE test_cd = #{test_cd};
+   </select>
+   
+   
+</mapper>

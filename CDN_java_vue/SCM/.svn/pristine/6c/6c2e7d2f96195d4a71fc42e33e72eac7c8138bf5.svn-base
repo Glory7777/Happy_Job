@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.cus.dao.MypageDao">
+
+	<!-- 회원 정보 변경(마이페이지) 초기 화면 -->
+	<select id="initMypage" resultType="kr.happyjob.study.cus.model.MypageModel">
+		/*kr.happyjob.study.cus.dao.initMypage*/
+		select user.loginid
+		, user.user_type
+		, user.name
+		, user.password
+		, user.user_hp
+		, user.user_email
+		, user.reg_date
+		, user.addr
+		, user.addr_dt
+		, user.zip_cd
+		, user.account_num
+		, user.user_yn
+		, user.bank_cd
+		from tb_userinfo user
+		where user.loginid = #{loginid}
+	</select>
+
+	<!-- 회원 정보 변경(마이페이지)의 정보 수정 -->
+	<update id="updateMypage">
+		/*kr.happyjob.study.cus.dao.updateMypage*/
+		update tb_userinfo
+		set loginid = #{loginid}
+		, password = #{password}
+		, user_hp = #{user_hp}
+		, user_email = #{user_email}
+		, name = #{name}
+		, zip_cd = #{zip_cd}
+		, addr = #{addr}
+		, addr_dt = #{addr_dt}
+		, account_num = #{account_num}
+		, bank_cd = #{bank_select}
+		where loginid = #{loginid}
+	</update>
+
+	<!-- 회원 정보 변경(마이페이지)의 회원 탈퇴 -->
+	<update id="delMember">
+		update tb_userinfo
+		set user_yn = '1'
+		where loginid = #{loginid}
+	</update>
+
+</mapper>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.cus.dao.ProductDao">
+
+	<!-- 상품목록 조회 -->
+	<select id="listProduct" resultType="kr.happyjob.study.cus.model.ProductModel">
+		select pd.pro_cd
+			 , dc.detail_name AS ct_cd
+			 , pd.pro_nm
+			 , pd.pro_mfc
+			 , pd.pro_sup_price
+		from tb_product pd
+		inner join tb_detail_code dc on dc.detail_code = pd.ct_cd and dc.group_code like 'productCD'
+		<where>
+			<if test="(searchProCt != null) and (!searchProCt.equals(''))">
+				and ct_cd = #{searchProCt}
+			</if>
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchsel eq 'proNm'.toString()">
+						and pro_nm Like CONCAT('%', #{searchtext},
+						'%')
+					</when>
+					<when test="searchsel eq 'proMfc'.toString()">
+						and pro_mfc LIKE CONCAT('%', #{searchtext}, '%')
+					</when>
+					<otherwise>
+						and (
+						pro_nm Like CONCAT('%', #{searchtext},
+						'%')
+						or pro_mfc LIKE CONCAT('%', #{searchtext}, '%')
+						)
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		order by pro_cd DESC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+
+	<!-- 상품목록 갯수 조회 -->
+	<select id="totalProduct" resultType="int">
+		select COUNT(pro_cd) AS tot_cnt
+		from tb_product
+		<where>
+			<if test="(searchProCt != null) and (!searchProCt.equals(''))">
+				and ct_cd = #{searchProCt}
+			</if>
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchsel eq 'proNm'.toString()">
+						and pro_nm Like CONCAT('%', #{searchtext},
+						'%')
+					</when>
+					<when test="searchsel eq 'proMfc'.toString()">
+						and pro_mfc LIKE CONCAT('%', #{searchtext}, '%')
+					</when>
+					<otherwise>
+						and (
+						pro_nm Like CONCAT('%', #{searchtext},
+						'%')
+						or pro_mfc LIKE CONCAT('%', #{searchtext}, '%')
+						)
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 상품목록 단건 조회 -->
+	<select id="selectProduct" resultType="kr.happyjob.study.cus.model.ProductModel">
+		select pd.pro_cd
+			   , pd.pro_nm
+			   , pd.pro_mfc
+			   , pd.pro_sup_price
+			   , pd.pro_dt
+			   , pd.ct_cd
+			   , fi.file_cd
+               , fi.logic_path
+               , fi.physic_path
+               , fi.file_nm
+               , fi.file_extention
+               , fi.file_size
+		from tb_product pd 
+		left outer join tb_file fi  on fi.pro_cd = pd.pro_cd
+		where pd.pro_cd = #{pro_cd} 
+	</select>
+	<insert id="insertCart">
+	     insert into tb_cart
+	                  (
+	               	   pro_cd
+                 	   , loginid
+                 	   , cart_reg_date
+                 	   , cart_cnt
+                 	   , order_hope_date
+	                  ) values (
+	              	    #{pro_cd}
+                	    ,#{loginid}
+                	    ,DATE_FORMAT(now(), '%Y-%m-%d')
+                	    ,#{cart_cnt}
+                	    ,DATE_FORMAT(#{order_hope_date}, '%Y-%m-%d')
+	                  );
+	</insert>
+	
+	<insert id="insertOrder">
+       <selectKey resultType="string" keyProperty="order_cd" order="BEFORE">
+              select cast((ifnull(max(cast(order_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_order
+        </selectKey>
+			insert into tb_order
+	                  (
+	  	                  order_cd
+	                      , pro_cd
+	                      , loginid
+	                      , order_date
+	                      , order_hope_date
+	                      , order_price
+	                      , order_cnt
+	                      , refund_yn
+	                      , order_st
+	                  ) values (
+		                    #{order_cd}
+	                      , #{pro_cd}
+	                      , #{loginid}
+	                      , DATE_FORMAT(now(), '%Y-%m-%d')
+	                      , #{order_hope_date}
+	                      , #{order_price}
+	                      , #{cart_cnt}
+	                      , '0'
+	                      , '0'
+	                  )
+	</insert>
+	
+</mapper>

@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.facadm.dao.EquDao">
+
+	<!-- 장비사항 목록 조회 -->
+	<select id = "listEqu" resultType = "kr.happyjob.study.facadm.model.EquModel">
+		SELECT equ_cd
+       		 , equ_nm
+       		 , equ_total_cnt
+         	 , equ_use_cnt
+       	 	 , equ_unable_cnt
+       		 , equ_able_cnt
+       		 , equ_etc
+		      
+		   from tb_equ_list
+		   
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						where equ_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						where equ_nm Like CONCAT('%', #{searchText}, '%')
+					</otherwise>
+				</choose>
+			</if>
+		order by equ_cd
+		LIMIT #{startPoint}, #{pageSize}
+	</select> <!-- 8.셀렉문으로 셀렉 -->
+	
+		
+	<!-- 장비사항 목록 총 갯수 조회 -->
+	<select id="totalCnt" resultType="int">
+		/*kr.happy.study.facadm.dao.EquDao.totalCnt*/
+			SELECT COUNT(equ_cd) as tot_Cnt
+			FROM 	tb_equ_list
+             
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						where equ_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						where equ_nm Like CONCAT('%', #{searchText}, '%')
+					</otherwise>
+				</choose>
+			</if>
+	</select>	<!-- 10.셀렉문으로 카운터해서 데이터량 정하기 -->
+		
+ 	
+ 	<!-- 장비사항 단건 조회 : 장비수정 클릭시   -->
+	<select id = "selectEqu" resultType = "kr.happyjob.study.facadm.model.EquModel">
+		SELECT equ_cd
+       		 , equ_nm
+       		 , equ_total_cnt
+         	 , equ_use_cnt
+       	 	 , equ_unable_cnt
+       		 , equ_able_cnt
+       		 , equ_etc
+		      
+		   from tb_equ_list
+			   
+
+		WHERE equ_cd = #{equ_cd}    
+	</select>
+	
+	
+	<!-- 장비사항 신규등록(저장) -->
+	<insert id="insertEqu">
+       <selectKey resultType="string" keyProperty="equ_cd" order="BEFORE">
+              select cast((ifnull(max(cast(equ_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_equ_list
+        </selectKey>
+			insert into tb_equ_list
+			          (
+			           equ_cd
+		       		 , equ_nm
+		       		 , equ_total_cnt
+		         	 , equ_use_cnt
+		       	 	 , equ_unable_cnt
+		       		 , equ_able_cnt
+		       		 , equ_etc
+			          )
+	                  values (
+	                      #{equ_cd}
+	                     ,#{equ_nm}
+	                     ,#{equ_total_cnt} 
+	                     ,0
+	                     ,0
+	                     ,#{equ_total_cnt} 
+	                     ,#{equ_etc} 
+	                  )
+	</insert>
+	<!-- 정보 수정 --> 
+	<update id="updateEqu">
+	       update tb_equ_list
+	            set  equ_nm = #{equ_nm} 
+	               , equ_total_cnt = #{equ_total_cnt}
+	               , equ_use_cnt = #{equ_use_cnt}
+	               , equ_unable_cnt = #{equ_unable_cnt}
+	               , equ_able_cnt = #{equ_able_cnt}
+                    , equ_etc = #{equ_etc} 
+	        where equ_cd = #{equ_cd};
+	</update> 
+
+	
+    <delete 	id="deleteEqu">
+		delete from tb_equ_list where equ_cd = 	#{equ_cd};
+    </delete>
+    
+    
+   <!-- /////////////////////////여기서 부터 상세 -->
+	<select id="listEquDtl" resultType="kr.happyjob.study.facadm.model.EquDtlModel">
+	/*kr.happy.study.facadm.dao.EquDao.listEquDtl*/
+	SELECT 	re.cls_room_cd
+		  , ro.cls_room_nm as cls_room_nm
+		  , re.equ_cd
+		  , eq.equ_nm as equ_nm
+	 	  , re.use_cnt
+	 	  , re.etc
+	      , eq.equ_able_cnt
+	 FROM   tb_cls_room_equ re
+	 INNER JOIN tb_cls_room ro ON re.cls_room_cd = ro.cls_room_cd
+   	 INNER JOIN tb_equ_list eq ON re.equ_cd = eq.equ_cd
+   	 WHERE re.equ_cd = ${equ_cd}
+		<if test="(searchDtlText != null) and (!searchDtlText.equals(''))">
+			<choose>
+				<when test="searchDtlSel eq 'titleDtl'.toString()">
+					and eq.equ_nm Like CONCAT('%', #{searchDtlText}, '%')
+				</when>
+				<otherwise>
+					and eq.equ_nm Like CONCAT('%', #{searchDtlText}, '%')
+				</otherwise>
+			</choose>
+		</if>
+	</select>
+	<!-- 상세페이지 갯수 세기 -->
+	<select id="totalCntDtl" resultType="int">
+	/*kr.happy.study.facadm.dao.EquDao.totalCntDtl*/
+	SELECT count(equ_cd)
+			 FROM   tb_cls_room_equ
+   	 WHERE equ_cd = ${equ_cd}
+		<if test="(searchDtlText != null) and (!searchDtlText.equals(''))">
+			<choose>
+				<when test="searchDtlSel eq 'titleDtl'.toString()">
+					and equ_nm Like CONCAT('%', #{searchDtlText}, '%')
+				</when>
+				<otherwise>
+					and eq.equ_nm Like CONCAT('%', #{searchDtlText}, '%')
+				</otherwise>
+			</choose>
+		</if>
+	<!-- 장비내역 단건 조회 -->
+	</select>
+	<select id = "selectEquDtl" resultType = "kr.happyjob.study.facadm.model.EquDtlModel">
+	/*kr.happy.study.facadm.dao.EquDao.selectEquDtl*/
+	SELECT 	re.cls_room_cd
+		  , ro.cls_room_nm as cls_room_nm
+		  , re.equ_cd
+		  , eq.equ_nm as equ_nm
+	 	  , re.use_cnt
+	 	  , re.etc
+	      , eq.equ_able_cnt
+	 FROM   tb_cls_room_equ re
+	 INNER JOIN tb_cls_room ro ON re.cls_room_cd = ro.cls_room_cd
+   	 INNER JOIN tb_equ_list eq ON re.equ_cd = eq.equ_cd
+   	 WHERE re.equ_cd = ${equ_cd}
+	   AND re.cls_room_cd = ${cls_room_cd}
+	</select>
+	
+	<!-- 장비 내역 1건 저장 -->	
+	<insert id="insertEquDtl">
+	/*kr.happy.study.facadm.dao.EquDao.insertEquDtl*/
+			insert into tb_cls_room_equ
+			          (
+			           cls_room_cd
+		       		 , equ_cd
+		       		 , use_cnt
+		         	 , etc
+			          )
+	                  values (
+	                      #{cls_room_cd}
+	                     ,#{equ_cd}
+	                     ,#{use_cnt} 
+	                     ,#{etc} 
+	                  )
+	</insert> 
+	<!-- 장비 내역 1건 신규 저장시 총수량 조절 -->	
+	<update id="insertAbleEqu">
+	/*kr.happy.study.facadm.dao.EquDao.insertAbleEqu*/
+		UPDATE tb_equ_list
+		   SET equ_use_cnt = equ_use_cnt + (cast(#{use_cnt} as unsigned))
+		     , equ_able_cnt = equ_able_cnt - (cast(#{use_cnt} as unsigned))
+		 WHERE equ_cd = #{equ_cd};
+	</update>
+	
+	<!-- 장비 내역 1건 수정 -->
+	<update id="updateEquDtl">
+	/*kr.happy.study.facadm.dao.EquDao.updateEquDtl*/
+		UPDATE tb_cls_room_equ
+		   SET use_cnt = #{use_cnt} 
+		     , etc = #{etc}
+		 WHERE equ_cd = #{equ_cd}
+		   AND cls_room_cd = #{cls_room_cd}
+	</update>
+	
+	<!-- 장비 내역 1건 수정시 전체 수량 조절 -->
+	<update id="updateAbleEqu">
+	/*kr.happy.study.facadm.dao.EquDao.updateAbleEqu*/
+		update tb_equ_list SET
+		  equ_use_cnt = (select sum(use_cnt) from tb_cls_room_equ where equ_cd = #{equ_cd}),
+		  equ_able_cnt = equ_total_cnt - equ_use_cnt - equ_unable_cnt
+		  where equ_cd = #{equ_cd}
+	</update>
+
+	<!-- 장비 내역 1건 수정 -->
+	<update id="deleteEquDtl">
+	/*kr.happy.study.facadm.dao.EquDao.deleteEquDtl*/
+		DELETE FROM tb_cls_room_equ
+		 WHERE equ_cd = #{equ_cd}
+		   AND cls_room_cd = #{cls_room_cd}
+	</update>
+	
+	<!-- 장비 내역 1건 수정시 전체 수량 조절 -->
+	<update id="deleteAbleEqu">
+	/*kr.happy.study.facadm.dao.EquDao.deleteAbleEqu*/
+		update tb_equ_list SET
+		  equ_use_cnt = (select sum(use_cnt) from tb_cls_room_equ where equ_cd = #{equ_cd}),
+		  equ_able_cnt = equ_total_cnt - equ_use_cnt - equ_unable_cnt
+		  where equ_cd = #{equ_cd}
+	</update>
+	<select id = "dupRoomCheck" resultType = "int">
+	/*kr.happy.study.facadm.dao.EquDao.dupRoomCheck*/
+	SELECT 	count(cls_room_cd)
+	 FROM   tb_cls_room_equ
+   	 WHERE equ_cd = ${equ_cd}
+	   AND cls_room_cd = ${cls_room_cd}
+	</select>
+
+	
+</mapper>
+

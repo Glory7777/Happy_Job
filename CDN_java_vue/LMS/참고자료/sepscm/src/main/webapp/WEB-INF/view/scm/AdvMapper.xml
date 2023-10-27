@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngadm.dao.LecDao">
+   
+   <!-- 강의 목록 -->
+	<select id="lecList" resultType="kr.happyjob.study.mngins.model.AdviceModel">
+		/*kr.happyjob.study.mngins.dao.AdviceMngDao.adviceList*/
+		select ct.cst_no	<!-- 상담번호  -->
+			 , ct.cst_date	<!-- 상담일자  -->
+			 , ui.name		<!-- 학생명  -->
+			 , ui.loginId	<!-- 학생ID  -->
+			 , le.lec_nm	<!-- 수강 강의명  -->
+			 , ct.lec_cd
+	 	  from tb_consulting ct
+	 	  	   inner join tb_userinfo ui on ct.loginID = ui.loginID
+	 	  	   inner join tb_lec le on ct.lec_cd = le.lec_cd
+ 	  	 where ct.cst_yn = 'Y'
+		 <if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'lectureName'.toString()">
+						and lec_nm Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'instName'.toString()">
+						and name LIKE CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+						     lec_nm Like CONCAT('%', #{searchText}, '%')
+						     or name LIKE CONCAT('%', #{searchText}, '%') 
+						      )
+					</otherwise>
+				</choose>
+		 </if>
+ 	  	 order by le.lec_cd DESC
+		 LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	<!-- 강의 목록 갯수 조회 -->
+	<select id="totalcnt" resultType="int">
+		/*kr.happyjob.study.mngadm.dao.LecDao.totalcnt*/
+		select COUNT(le.lec_cd) AS tot_cnt 
+          from tb_lec le
+               inner join tb_userinfo ui on le.loginID = ui.loginID
+         where lec_yn = 'N'
+     	<if test="(searchText != null) and (!searchText.equals(''))">
+			<choose>
+				<when test="searchSel eq 'lectureName'.toString()">
+					and lec_nm Like CONCAT('%', #{searchText}, '%')
+				</when>
+				<when test="searchSel eq 'instName'.toString()">
+					and name LIKE CONCAT('%', #{searchText}, '%')
+				</when>
+				<otherwise>
+					and (
+					     lec_nm Like CONCAT('%', #{searchText}, '%')
+					     or name LIKE CONCAT('%', #{searchText}, '%') 
+					      )
+				</otherwise>
+			</choose>
+		 </if>  
+	</select>
+	
+	
+</mapper>

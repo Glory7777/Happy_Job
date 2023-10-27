@@ -1,0 +1,103 @@
+package kr.happyjob.study.mngins.model;
+
+public class AdviceModel {
+
+	// tb_consulting
+	private int cst_no;			//상담번호			
+	private String cst_date;	//상담일자
+	private int score;			//점수	
+	private String cls_room;	//상담장소
+	private String cst_ctt;		//상담내용
+	private String cst_update_date;	//상담수정일자
+	private String cst_yn;		//상담여부
+	private String cst_delete_yn;	//상담삭제
+	
+	
+	// tb_userinfo
+	private String name; 	//학생명
+
+	private String loginID;	// 학생ID
+	
+	// tb_lec
+	private String lec_nm;		//수강강의명
+	private int lec_cd;		//수강강의코드
+	
+	
+	public int getCst_no() {
+		return cst_no;
+	}
+	public void setCst_no(int cst_no) {
+		this.cst_no = cst_no;
+	}
+	public String getCst_date() {
+		return cst_date;
+	}
+	public void setCst_date(String cst_date) {
+		this.cst_date = cst_date;
+	}
+	public int getScore() {
+		return score;
+	}
+	public void setScore(int score) {
+		this.score = score;
+	}
+	public String getCls_room() {
+		return cls_room;
+	}
+	public void setCls_room(String cls_room) {
+		this.cls_room = cls_room;
+	}
+	public String getCst_ctt() {
+		return cst_ctt;
+	}
+	public void setCst_ctt(String cst_ctt) {
+		this.cst_ctt = cst_ctt;
+	}
+	public String getCst_update_date() {
+		return cst_update_date;
+	}
+	public void setCst_update_date(String cst_update_date) {
+		this.cst_update_date = cst_update_date;
+	}
+	public String getCst_yn() {
+		return cst_yn;
+	}
+	public void setCst_yn(String cst_yn) {
+		this.cst_yn = cst_yn;
+	}
+	public String getCst_delete_yn() {
+		return cst_delete_yn;
+	}
+	public void setCst_delete_yn(String cst_delete_yn) {
+		this.cst_delete_yn = cst_delete_yn;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getLoginID() {
+		return loginID;
+	}
+	public void setLoginID(String loginID) {
+		this.loginID = loginID;
+	}
+	public String getLec_nm() {
+		return lec_nm;
+	}
+	public void setLec_nm(String lec_nm) {
+		this.lec_nm = lec_nm;
+	}
+	public int getLec_cd() {
+		return lec_cd;
+	}
+	public void setLec_cd(int lec_cd) {
+		this.lec_cd = lec_cd;
+	}
+	
+	
+	
+
+	
+}

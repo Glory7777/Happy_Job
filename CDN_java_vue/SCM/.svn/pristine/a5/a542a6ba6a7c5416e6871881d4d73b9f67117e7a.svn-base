@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.SupplierDao">
+	<!-- 납품업체 목록 조회 -->
+	<select id="supplierList" resultType="kr.happyjob.study.scm.model.SupplierModel">
+		/*kr.happyjob.study.scm.dao.supplierList*/
+		select s.sup_cd
+			  ,s.sup_nm
+			  ,s.sup_manager
+			  ,s.sup_hp
+			  ,s.sup_addr
+			  ,s.sup_email
+		  from tb_supplier s
+		  where s.sup_delete_yn is null
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and s.sup_nm Like CONCAT('%', #{searchText}, '%')
+			</if>
+ 		order by s.sup_cd DESC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	<!-- 공지사항 갯수 조회 -->
+	<select id="supplierTotal" resultType="int">
+		/*kr.happyjob.study.scm.dao.supplierTotal*/
+		select count(distinct s.sup_cd) as tot_cnt
+		  from tb_supplier s
+		  where s.sup_delete_yn is null
+		<if test="(searchText != null) and (!searchText.equals(''))">
+			and s.sup_nm Like CONCAT('%', #{searchText}, '%')
+		</if>
+	</select>
+	
+	<!-- 상품 정보 조회 -->
+	<select id="productList" resultType="kr.happyjob.study.scm.model.ProductModel">
+		/*kr.happyjob.study.scm.dao.productList*/
+		select p.pro_cd
+		      ,p.ct_cd
+		      ,p.pro_nm
+		      ,p.pro_model_nm
+		      ,p.pro_sup_price
+		      ,p.pro_unit_price
+		      ,p.pro_stock
+		      ,p.pro_dt
+		      ,p.pro_mfc
+		      ,p.pro_reg_date
+		  from tb_supplier_product sp
+	 left join tb_product p on p.pro_cd = sp.pro_cd
+	     where sp.sup_cd = #{sup_cd} and p.pro_delete_yn is null
+		 LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	<!-- 상품 갯수 조회 -->
+	<select id="productTotalCnt" resultType="int">
+		/*kr.happyjob.study.scm.dao.productTotalCnt*/
+		select COUNT(sp.pro_cd) AS tot_cnt 
+		  from tb_supplier_product sp
+  	 left join tb_product p on p.pro_cd = sp.pro_cd
+     	 where sp.sup_cd = #{sup_cd} and p.pro_delete_yn is null
+	</select>
+	
+	<!-- 납품업자 등록 -->
+	<insert id="insertSupplier">
+	     insert into tb_supplier
+        <selectKey resultType="string" keyProperty="sup_cd" order="BEFORE">
+             select cast((ifnull(max(cast(sup_cd as unsigned)) ,0) + 1) as char(20)) 
+               from tb_supplier
+        </selectKey>
+	          (
+	           	  sup_cd
+	           	 ,sup_nm
+	           	 ,sup_manager
+	           	 ,sup_hp
+	           	 ,sup_addr
+	           	 ,sup_email
+	          ) values (
+	              #{sup_cd}
+	             ,#{sup_nm}
+	             ,#{sup_manager}
+	             ,#{sup_hp}
+	             ,#{sup_addr}
+	             ,#{sup_email}
+	          )
+	</insert>
+	
+	<update id="updateSupplier">
+	       update tb_supplier
+	            set  sup_nm = #{sup_nm}
+                    , sup_manager = #{sup_manager} 
+	                , sup_hp = #{sup_hp} 
+	                , sup_addr = #{sup_addr} 
+	                , sup_email = #{sup_email} 
+	        where sup_cd = #{sup_cd}       
+	</update> 
+
+    <delete id="deleteSupplier">
+          update tb_supplier
+                set sup_delete_yn = 1
+           where sup_cd = #{sup_cd}    
+    </delete>	
+    
+	<select id="selectSupplier" resultType="kr.happyjob.study.scm.model.SupplierModel">
+		/*kr.happyjob.study.scm.dao.selectSupplier*/
+		select s.sup_cd
+			  ,s.sup_nm
+			  ,s.sup_manager
+			  ,s.sup_hp
+			  ,s.sup_addr
+			  ,s.sup_email
+		  from tb_supplier s
+		where s.sup_cd = #{sup_cd}
+	</select>    
+	
+	
+	
+</mapper>

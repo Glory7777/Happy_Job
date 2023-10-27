@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.cmtstd.dao.QnaDao">
+   <!-- 전체조회 -->
+      <select id="qnaList" resultType="kr.happyjob.study.cmtstd.model.QnaModel">
+      select 
+          bo.brd_no
+         ,bo.brd_title
+         ,bo.brd_ctt
+         ,ui.name
+         ,bo.loginID
+         ,bo.brd_veiws_cnt
+         ,bo.brd_delete_yn
+         ,bo.ans_yn 
+      from  tb_board bo
+         inner join tb_userinfo ui on ui.loginID = bo.loginID
+      where bo.ctg_cd = #{ctg_cd}
+      AND bo.brd_delete_yn='N'
+      <if test="(searchtext != null) and (!searchtext.equals(''))">
+            <choose>
+               <when  test="searchsel eq 'title'.toString()">
+                     and bo.brd_title Like CONCAT('%', #{searchtext}, '%')
+               </when>
+               <when test="searchsel eq 'regname'.toString()">
+                        and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+               </when>
+               <when test="searchsel eq 'content'.toString()">
+                        and bo.brd_ctt LIKE CONCAT('%', #{searchtext}, '%')
+               </when>
+               <otherwise>
+                     and (
+                                  bo.brd_title Like CONCAT('%', #{searchtext}, '%')
+                              or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+                              or  bo.brd_ctt Like CONCAT('%', #{searchtext}, '%')
+                           )
+               </otherwise>         
+            </choose>
+      </if>
+      order by bo.brd_no DESC
+      LIMIT #{startpoint}, #{pageSize}   
+      </select>   
+
+
+
+   <!--건 수   -->
+   <select id="totalqna" resultType="int">
+           /* kr.happyjob.study.cmtstd.dao.totalqna*/
+      select
+             COUNT(*) AS tot_cnt 
+      from tb_board bo, tb_userinfo ui
+      where bo.loginID = ui.loginID
+        and bo.ctg_cd = 2
+      	and bo.brd_delete_yn='N'
+       <if test="(searchtext != null) and (!searchtext.equals(''))">
+             <choose>
+               <when  test="searchsel eq 'title'.toString()">
+                     and bo.brd_title Like CONCAT('%', #{searchtext}, '%')
+               </when>
+               <when test="searchsel eq 'regname'.toString()">
+                        and ui.name LIKE CONCAT('%', #{searchtext}, '%')
+               </when>
+               <when test="searchsel eq 'content'.toString()">
+                        and bo.brd_ctt LIKE CONCAT('%', #{searchtext}, '%')
+               </when>
+               <otherwise>
+                     and (
+                                  bo.brd_title Like CONCAT('%', #{searchtext}, '%')
+                              or ui.name LIKE CONCAT('%', #{searchtext}, '%') 
+                              or  bo.brd_ctt Like CONCAT('%', #{searchtext}, '%')
+                           )
+               </otherwise>         
+            </choose>
+      </if>
+    </select>
+    
+    <!--한 건 조회  -->
+       <select id="qnaselect" resultType="kr.happyjob.study.cmtstd.model.QnaModel">
+                  select
+                         bo.brd_no
+                       , bo.brd_title
+                       , bo.brd_ctt
+                       , bo.brd_reg_date
+                       , bo.brd_veiws_cnt
+                       , bo.loginID
+                       , bo.ans_yn
+                       , rel.reply_ctt as reply_ctt
+                       , rel.reg_date as reg_date
+                       , rel.reply_no as reply_no
+                  from  tb_board bo
+                           left outer join (  
+                                 select reply_ctt
+                                          ,reg_date
+                                          ,reply_no
+                                          ,brd_no
+                                  from tb_reply
+                                where brd_no=#{brd_no}      
+                           ) rel on rel.brd_no = bo.brd_no
+                  where bo.brd_no =#{brd_no}
+       </select>
+    
+    
+    <!-- 조회수 -->
+    <update id="qnacntup"  parameterType="int">
+        update tb_board
+             set brd_veiws_cnt = brd_veiws_cnt + 1
+         where  brd_no = #{brd_no} 
+   </update>
+   
+   
+      <!-- 삭제-->
+    <update id="deletenotice"  parameterType="int">
+    update tb_board
+            set brd_delete_yn='Y'
+    where brd_no=#{brd_no} ;
+   </update>
+
+         <!-- 등록 -->
+         <insert id="insertqna" parameterType="map">
+                <selectKey resultType="int" keyProperty="brd_no" order="BEFORE">
+                    SELECT COALESCE(MAX(brd_no), 0) + 1 FROM tb_board
+                </selectKey>
+                INSERT INTO tb_board
+                (
+                   brd_no
+                    , brd_title 
+                    , brd_ctt
+                    , brd_wt
+                    , loginid
+                    , brd_reg_date
+                    , brd_delete_yn
+                    , ctg_cd
+                    , brd_veiws_cnt
+                ) VALUES (
+                    #{brd_no}
+                    , #{qna_title}
+                    , #{qna_content} 
+                    , (SELECT ui.name FROM tb_userinfo ui WHERE ui.loginid = #{loginid})
+                    , #{loginid} 
+                    , DATE_FORMAT(now(), '%Y-%m-%d')
+                    , 'N'
+                    , 2
+                    , 0
+                )   
+      </insert>
+   
+    <!--글 수정  -->     
+      <update id="updateqna" >
+         update tb_board
+               set  brd_title = #{qna_title}
+                   ,brd_ctt = #{qna_content} 
+                   ,brd_reg_date = DATE_FORMAT(now(), '%Y-%m-%d')
+           where brd_no = #{brd_no}     
+      </update>
+   
+   
+      <!--답글  -->
+      <insert id="commentqna">
+         <selectKey resultType="int" keyProperty="reply_no" order="BEFORE">
+            SELECT COALESCE(MAX(reply_no), 0) + 1 FROM tb_reply
+        </selectKey>
+      INSERT INTO tb_reply 
+            (
+            brd_no
+            , reply_no
+            , loginID
+            , reply_ctt
+            , reg_date
+            )
+       VALUES (
+             #{brd_no}    
+             ,#{reply_no} 
+             ,#{loginid}
+             ,#{qnacomment}
+             ,DATE_FORMAT(now(), '%Y-%m-%d')
+             );
+      </insert>
+   
+   
+      <!--답글수정  -->
+      <update id="updatecomment" >
+         update tb_reply
+                  set reply_ctt =#{qnacomment}
+                ,reg_date= DATE_FORMAT(now(), '%Y-%m-%d')
+         where reply_no=#{reply_no};     
+      </update>
+               
+            <!-- 답변 -->         
+      <update id="ans_yn">
+             update tb_board 
+                    set ans_yn = 'Y'
+                    where brd_no=#{brd_no};
+      </update>         
+               
+</mapper>

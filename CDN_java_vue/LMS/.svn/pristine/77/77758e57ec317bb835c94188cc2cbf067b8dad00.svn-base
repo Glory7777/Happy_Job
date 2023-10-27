@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngins.dao.GradesMngDao">
+
+	<!-- 성적 강의 목록 -->
+	<select id="gradesList" resultType="kr.happyjob.study.mngins.model.GradesMngModel">
+		select tt.lec_cd,
+			   tt.test_nm,
+			   tt.test_start_date,
+			   tt.test_end_date,
+			   ui.name
+		  from tb_test tt
+			inner join tb_lec tl on(tt.lec_cd = tl.lec_cd)
+			inner join tb_userinfo ui on (tl.loginID = ui.loginID)	
+			<where>
+				<if test="(searchtext != null) and (!searchtext.equals(''))">
+					and test_nm Like CONCAT('%', #{searchtext}, '%')
+				</if>
+			</where>
+		order by lec_cd ASC
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	<select id="totalcnt" resultType="int">
+		select count(lec_cd)
+		  from tb_test 
+		<where>
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				and test_nm Like CONCAT('%', #{searchtext}, '%')
+			</if>
+		</where>
+	</select>
+</mapper>
+

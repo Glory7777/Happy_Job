@@ -1,0 +1,212 @@
+package kr.happyjob.study.sptstd.controller;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.sptins.model.FileInfoModel;
+import kr.happyjob.study.sptins.service.LearningMaterialService;
+import kr.happyjob.study.sptstd.model.ALearningMaterialModel;
+import kr.happyjob.study.sptstd.service.ALearningMaterialService;
+
+
+
+@Controller
+@RequestMapping("/std/")
+public class ALearningMaterialsController {
+   
+	@Autowired
+	ALearningMaterialService aLMService;
+	
+	@Autowired
+	LearningMaterialService lmService;
+
+   // Set logger
+   private final Logger logger = LogManager.getLogger(this.getClass());
+
+   // Get class name for logger
+   private final String className = this.getClass().toString();
+   
+   
+   /**
+    * 학습자료 A 초기화면
+    */
+   @RequestMapping("a_learningMaterials.do")
+   public String a_learningMaterials(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+         HttpServletResponse response, HttpSession session) throws Exception {
+      
+      
+         logger.info("+ Start " + className + ".a_learningMaterials");
+         logger.info("   - paramMap : " + paramMap);
+         
+         logger.info("+ End " + className + ".a_learningMaterials");
+   
+         return  "sptstd/aLearningMaterials";
+   }
+   
+   
+   /**
+    * 학습자료 A 초기화면 Vue
+    */
+   @RequestMapping("a_learningMaterialsvue.do")
+   public String a_learningMaterialsvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+         HttpServletResponse response, HttpSession session) throws Exception {
+      
+      
+         logger.info("+ Start " + className + ".a_learningMaterialsvue");
+         logger.info("   - paramMap : " + paramMap);
+         
+         logger.info("+ End " + className + ".a_learningMaterialsvue");
+   
+         return  "sptstd/aLearningMaterialsVue";
+   }
+   
+   
+   /** 주차 목록 조회
+	* @return 주차수 목록(List)
+	* @author 김정욱
+	*/
+   @RequestMapping("lmFindWeeklyList.do")
+   public String lmFindWeeklyList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+         HttpServletResponse response, HttpSession session) throws Exception {
+      
+      
+         logger.info("+ Start " + className + ".lmFindWeeklyList");
+         logger.info("   - paramMap : " + paramMap);
+         
+         // 학생의 loginID 불러와서 매개변수로 넣기
+         paramMap.put("loginId", session.getAttribute("loginId").toString());
+         
+         int lec_cd = aLMService.selectLecCd(paramMap);
+         paramMap.put("lec_cd", lec_cd);
+         
+         // 강의명 구하기
+         String lec_nm = aLMService.selectLecNm(paramMap);
+         
+         // 주차 목록 조회
+         List<ALearningMaterialModel> aLMList = aLMService.lmFindWeeklyList(paramMap);
+         
+         // 주차 목록 갯수
+         int totalcnt = aLMList.size();
+         
+         model.addAttribute("lec_nm", lec_nm);
+         model.addAttribute("aLMList", aLMList);
+         model.addAttribute("totalcnt", totalcnt);
+         
+         logger.info("+ End " + className + ".lmFindWeeklyList");
+   
+         return  "sptstd/aLearningMaterialsWeeklyList";
+   }
+   
+   
+   /** 주차 목록 조회 Vue
+	* @return 주차수 목록(List)
+	* @author 김정욱
+	*/
+   @ResponseBody
+   @RequestMapping("lmFindWeeklyListVue.do")
+   public Map<String, Object> lmFindWeeklyListVue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+        HttpServletResponse response, HttpSession session) throws Exception {
+     
+	   logger.info("+ Start " + className + ".lmFindWeeklyListVue");
+	   logger.info("   - paramMap : " + paramMap);
+    
+	   //학생의 loginID 불러와서 매개변수로 넣기
+	   paramMap.put("loginId", session.getAttribute("loginId").toString());
+        
+	   int lec_cd = aLMService.selectLecCd(paramMap);
+	   paramMap.put("lec_cd", lec_cd);
+		
+	   // 강의명 구하기
+	   String lec_nm = aLMService.selectLecNm(paramMap);
+		
+	   // 주차 목록 조회
+	   List<ALearningMaterialModel> aLMList = aLMService.lmFindWeeklyList(paramMap);
+		
+	   // 주차 목록 갯수
+	   int totalcnt = aLMList.size();
+	   
+	   Map<String, Object> returnMap = new HashMap<>();
+	   
+	   returnMap.put("lec_nm", lec_nm);
+	   returnMap.put("aLMList", aLMList);
+	   returnMap.put("totalcnt", totalcnt);
+		
+	   logger.info("+ End " + className + ".lmFindWeeklyListVue");
+		  
+	   return  returnMap;
+   }
+   
+   
+   /** 파일 정보 불러오기
+	* @return 파일정보(FileInfoModel)
+	* @author 김정욱
+	*/
+  @ResponseBody
+  @RequestMapping("selectWeek.do")
+  public FileInfoModel selectWeek(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+        HttpServletResponse response, HttpSession session) throws Exception {
+     
+     
+        logger.info("+ Start " + className + ".selectWeek");
+        logger.info("   - paramMap : " + paramMap);
+        
+        FileInfoModel fileInfo = aLMService.selectWeek(paramMap);
+        
+        logger.info("+ End " + className + ".selectWeek");
+  
+        return fileInfo;
+  }
+   
+  
+  	/**
+	 * 첨부파일 다운로드
+	 */
+	@RequestMapping("lecFiledownload.do")
+	public void lecFiledownload(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+	
+		logger.info("+ Start " + className + ".lecFiledownload");
+		logger.info("   - paramMap : " + paramMap);
+		
+		// 첨부파일 조회
+		FileInfoModel fileInfo = lmService.lecFiledownload(paramMap);
+		
+		// sectinfo.getFile_nm()  첨부 파일명
+		// sectinfo.getPhysic_path()  물리경로  X:\.....
+		
+		byte fileByte[] = FileUtils.readFileToByteArray(new File(fileInfo.getLec_file_path()));
+		
+		response.setContentType("application/octet-stream");
+	    response.setContentLength(fileByte.length);
+	    response.setHeader("Content-Disposition", "attachment; fileName=\"" + URLEncoder.encode(fileInfo.getLec_file_nm(),"UTF-8")+"\";");
+	    response.setHeader("Content-Transfer-Encoding", "binary");
+	    response.getOutputStream().write(fileByte);
+	     
+	    response.getOutputStream().flush();
+	    response.getOutputStream().close();
+
+		logger.info("+ End " + className + ".lecFiledownload");
+	}
+  
+  
+  
+   
+}

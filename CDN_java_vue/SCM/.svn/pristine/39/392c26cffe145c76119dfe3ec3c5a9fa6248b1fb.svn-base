@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.dlm.dao.DlmDeliveryDao">
+
+	<!-- 배송지시서 조회 -->
+	<select id="listDeliveryDirection" resultType="kr.happyjob.study.dlm.model.DlmDeliveryModel">
+		  select dr.direc_cd
+		        ,dl.deli_cd
+		        ,dl.order_cd
+		        ,dl.pro_cd
+		        ,od.order_hope_date
+		        ,od.loginid
+		        ,dr.direc_date
+		        ,dl.deli_st
+		        ,pd.pro_nm
+		  from tb_direction dr
+		  inner join tb_delivery dl on dr.deli_cd = dl.deli_cd
+		  inner join tb_order od on dl.order_cd = od.order_cd and dl.pro_cd = od.pro_cd
+		  inner join tb_product pd on dl.pro_cd = pd.pro_cd
+		  <where>
+			 <if test="deliveryStatusCheck == 'true' || deliveryStatusCheck.equals('true')">
+					and deli_st = '0'
+			 </if>
+			 <if test="startDate != '' || !startDate.equals('')">
+		     		and dr.direc_date <![CDATA[>=]]> #{startDate}
+		     </if>
+		     <if test="endDate != '' || !endDate.equals('')">
+		     		and dr.direc_date <![CDATA[<=]]> #{endDate}
+		     </if>
+		  </where>
+		  order by cast(dr.direc_cd as unsigned) DESC
+		  LIMIT #{startpoint}, #{pageSize}
+		  
+	</select> 
+	
+	<!-- 배송지시서 조회(대시보드) -->
+	<select id="listDeliveryDirectionDashboard" parameterType="Map" resultType="kr.happyjob.study.dlm.model.DlmDeliveryModel">
+		  select dr.direc_cd
+		        ,dl.deli_cd
+		        ,dl.order_cd
+		        ,dl.pro_cd
+		        ,od.order_hope_date
+		        ,od.loginid
+		        ,dr.direc_date
+		        ,pd.pro_nm
+		        ,dc.detail_name AS deli_st
+		        ,od.order_cnt
+		  from tb_direction dr
+		  inner join tb_delivery dl on dr.deli_cd = dl.deli_cd
+		  inner join tb_order od on dl.order_cd = od.order_cd and dl.pro_cd = od.pro_cd
+		  inner join tb_product pd on dl.pro_cd = pd.pro_cd
+		  inner join tb_detail_code dc on dc.detail_code = dl.deli_st and dc.group_code like 'deliCD'
+		  order by cast(dr.direc_cd as unsigned) DESC
+	</select>
+	
+	<!-- 배송지시서 갯수 조회 -->
+	<select id="totalDeliveryDirection" resultType="int">
+		select COUNT(dr.direc_cd) AS tot_cnt
+		from tb_direction dr
+		inner join tb_delivery dl on dr.deli_cd = dl.deli_cd
+		inner join tb_order od on dl.order_cd = od.order_cd and dl.pro_cd = od.pro_cd
+		<where>
+			 <if test="deliveryStatusCheck == 'true' || deliveryStatusCheck.equals('true')">
+					and deli_st = '0'
+			 </if>
+			 <if test="startDate != ''">
+		     		and dr.direc_date <![CDATA[>=]]> #{startDate}
+		     </if>
+		     <if test="endDate != ''">
+		     		and dr.direc_date <![CDATA[<=]]> #{endDate}
+		     </if>
+		</where>
+	</select>
+	
+	<!-- 배송지시서 단건 조회 -->
+	<select id="selectDeliveryDirection" resultType="kr.happyjob.study.dlm.model.DlmDeliveryModel">
+		  select dl.order_cd
+		        ,od.loginid
+		        ,ui.addr
+		        ,ui.addr_dt
+		        ,dl.pro_cd
+		        ,pd.pro_nm
+		        ,od.order_cnt
+		  from tb_direction dr
+		  inner join tb_delivery dl on dr.deli_cd = dl.deli_cd
+		  inner join tb_order od on dl.order_cd = od.order_cd and dl.pro_cd = od.pro_cd
+		  inner join tb_product pd on dl.pro_cd = pd.pro_cd
+		  inner join tb_userinfo ui on od.loginid = ui.loginid
+		  where dr.direc_cd = #{direc_cd}
+	</select>
+	
+	<update id="updateDelivery">
+	       	update tb_delivery  
+	        set deli_st  = '1'
+	        where deli_cd = #{deli_cd}
+	</update>
+	
+	<update id="updateDeliveryFin">
+	       	update tb_delivery  
+	        set deli_st  = '2'
+	        where deli_cd = #{deli_cd}
+	</update>
+	
+
+	
+</mapper>

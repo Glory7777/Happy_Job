@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.prsadm.dao.StdDao">
+
+	<!-- 장비사항 목록 조회 -->
+	<select id = "listStd" resultType = "kr.happyjob.study.prsadm.model.StdModel">
+			/*kr.happy.study.prsadm.dao.StdDao.listStd*/
+			SELECT ui.loginID
+			     , ui.user_type
+			     , ui.name
+			     , ui.sex
+			     , ui.hp
+			     , ui.email
+			     , ui.regdate
+			     , ui.addr
+			     , ui.birthday
+			     , ui.secession_date
+			     , ui.secession
+			     , job.ctg_nm
+			     , (SELECT CASE
+			           WHEN EXISTS (
+			               SELECT 1
+			               FROM   tb_app_list
+			               WHERE  app_yn='Y'
+			                 AND  end_yn='N'
+			                 AND  loginID = ui.loginID
+			           ) THEN '수강중'
+			           ELSE '미수강'
+			       END) as ing_yn
+			FROM tb_userinfo ui
+			LEFT JOIN tb_std_job job ON ui.loginID = job.loginID
+			WHERE ui.user_type = 'A'
+			AND   ui.secession != "Y"
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and ui.name Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'ID'.toString()">
+						and ui.loginID Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'statusYN'.toString()">
+						and ui.status_yn Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (ui.name Like CONCAT('%', #{searchText}, '%')
+						or  ui.loginID Like CONCAT('%', #{searchText}, '%')
+						or  ui.status_yn Like CONCAT('%', #{searchText}, '%'))
+					</otherwise>
+				</choose>
+			</if>
+		order by ui.regdate DESC
+		LIMIT #{startPoint}, #{pageSize}
+	</select> <!-- 8.셀렉문으로 셀렉 -->
+	
+		
+	<!-- 학생 목록 총 갯수 조회 -->
+	<select id="totalCnt" resultType="int">
+		/*kr.happy.study.prsadm.dao.StdDao.totalCnt*/
+		SELECT COUNT(ui.loginID) as tot_Cnt
+		  FROM tb_userinfo ui
+	 LEFT JOIN tb_std_job job ON ui.loginID = job.loginID
+         WHERE user_type = "A"
+   		   AND secession != "Y"
+
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and ui.name Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'ID'.toString()">
+						and ui.loginID Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'statusYN'.toString()">
+						and ui.status_yn Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (ui.name Like CONCAT('%', #{searchText}, '%')
+						or  ui.loginID Like CONCAT('%', #{searchText}, '%')
+						or  ui.status_yn Like CONCAT('%', #{searchText}, '%'))
+					</otherwise>
+				</choose>
+			</if>
+	</select>	<!-- 10.셀렉문으로 카운터해서 데이터량 정하기 -->
+		
+ 	
+ 	<!-- 장비사항 단건 조회 : 학생이름 클릭시 --> 
+	<select id = "selectStd" resultType = "kr.happyjob.study.prsadm.model.StdModel">
+		/*kr.happy.study.prsadm.dao.StdDao.selectStd*/
+			SELECT ui.loginID
+			     , ui.user_type
+			     , ui.name
+			     , ui.sex
+			     , ui.hp
+			     , ui.email
+			     , ui.regdate
+			     , ui.addr
+			     , ui.birthday
+			     , ui.secession_date
+			     , ui.secession
+			     , job.ctg_nm
+			     , (SELECT CASE
+			           WHEN EXISTS (
+			               SELECT 1
+			               FROM   tb_app_list
+			               WHERE  app_yn='Y'
+			                 AND  end_yn='N'
+			                 AND  loginID = ui.loginID
+			           ) THEN '수강중'
+			           ELSE '미수강'
+			       END) as ing_yn
+			FROM tb_userinfo ui
+			LEFT JOIN tb_std_job job ON ui.loginID = job.loginID
+		WHERE ui.loginID = #{loginID}    
+	</select>
+	
+	
+	<!-- 학생 신규재직여부 신규(저장)  -->
+	<insert id="insertStdCtg" parameterType="Map">
+	/*kr.happy.study.prsadm.dao.StdDao.insertStdCtg*/
+    INSERT INTO tb_std_job
+                  (
+                   loginID
+                 , ctg_nm
+                  )
+                  values (
+                      #{loginID}
+                     ,#{ctg_nm}
+                  )
+	</insert>
+	
+	<!-- 정보 수정 재직여부가 신규일시-->
+    <update id="insertStd">
+	/*kr.happy.study.prsadm.dao.StdDao.insertStd*/
+        update tb_userinfo
+        set  
+             name = #{name}
+           , sex = #{sex}
+           , hp = #{hp}
+           , addr = #{addr}
+           , birthday = #{birthday}
+           , email = #{email}
+        where loginID = #{loginID};
+    </update>
+
+	<!-- 정보 수정-->
+    <update id="updateStd">
+	/*kr.happy.study.prsadm.dao.StdDao.updateStd*/
+        update tb_userinfo ui
+        JOIN tb_std_job job ON ui.loginID = job.loginID
+        set  
+             ui.name = #{name}
+           , ui.sex = #{sex}
+           , ui.hp = #{hp}
+           , ui.addr = #{addr}
+           , ui.birthday = #{birthday}
+           , ui.email = #{email}
+           , job.ctg_nm = #{ctg_nm}
+        where ui.loginID = #{loginID};
+    </update>
+
+	<!-- 삭제 -->
+    <update id="deleteStd">
+    /*kr.happy.study.prsadm.dao.StdDao.deleteStd*/
+	       update tb_userinfo
+              set secession = "Y"
+                , secession_date = DATE_FORMAT(now(), '%Y-%m-%d')
+	        where loginID = #{loginID};
+    </update>  
+    <!-- 여기서 부터 하단 모달 및 하단 모달 팝업에 관한 SQL -->
+    <select id="listStdLec" resultType = "kr.happyjob.study.prsadm.model.StdLecModel">
+    /*kr.happy.study.prsadm.dao.StdDao.listStdLec*/
+   	<![CDATA[
+   	SELECT    		 ap.lec_cd
+			       , ap.loginID
+			       , ap.app_yn
+			       , ap.end_yn
+			       , lec.lec_nm
+			       , lec.lec_ctg
+			       , lec.loginID as ins_id
+			       , ui.name as ins_nm
+			       , ui.email as ins_email
+			       , ui.hp as ins_hp
+			       , lec.lec_start_date
+			       , lec.lec_end_date
+			       , lec.lec_days
+			       , lec.app_cnt
+			       , lec.capacity
+			       , lec.cls_room
+			       , lec.lec_goal
+			       , lec.lec_yn
+			       , lec.svy_cd
+	               , CASE
+			           WHEN ap.app_yn = 'Y' AND ap.end_yn = 'Y' THEN '수강 완료'
+			           WHEN ap.app_yn = 'N' AND ap.end_yn = 'N' THEN
+			               CASE
+			                   WHEN now() < STR_TO_DATE(lec.lec_start_date, '%Y-%m-%d') THEN '승인 대기'
+			                   ELSE '미승인'
+			               END
+			           WHEN ap.app_yn = 'Y' AND ap.end_yn = 'N' THEN 
+			           	   CASE
+			           	   	   WHEN now() < STR_TO_DATE(lec.lec_start_date, '%Y-%m-%d') THEN '수강 대기'
+			           	   	   ELSE '수강 중'
+			           	   END
+			           ELSE '미승인'
+			         END as lec_status
+	FROM      		 tb_app_list ap
+	INNER JOIN		 tb_lec lec ON ap.lec_cd = lec.lec_cd
+	INNER JOIN 		 tb_userinfo ui ON lec.loginID = ui.loginID
+	WHERE     		 ap.loginID = #{loginID}
+	ORDER BY 		 lec.lec_YN DESC
+				   , DATE_FORMAT(lec_start_date, '%Y-%m-%d') ASC;]]>
+    </select>
+    <!-- 리스트 페이지 할당 -->
+    <select id="totalCntStdLec" resultType="int">
+    /*kr.happy.study.prsadm.dao.StdDao.totalCntStdLec*/
+    SELECT		count(lec_cd)
+    FROM		tb_app_list
+    WHERE		loginID = #{loginID}
+    </select>
+    
+     	<!-- 강의계획 단건조회 : 강의이름 클릭시 --> 
+	<select id = "selectLec" resultType = "kr.happyjob.study.prsadm.model.StdLecModel">
+		/*kr.happy.study.prsadm.dao.StdDao.selectLec*/
+   	<![CDATA[
+	   	SELECT    		 ap.lec_cd
+				       , ap.loginID
+				       , ap.app_yn
+				       , ap.end_yn
+				       , lec.lec_nm
+				       , lec.lec_ctg
+				       , lec.loginID as ins_id
+				       , ui.name as ins_nm
+				       , ui.email as ins_email
+				       , ui.hp as ins_hp
+				       , lec.lec_start_date
+				       , lec.lec_end_date
+				       , lec.lec_days
+				       , lec.app_cnt
+				       , lec.capacity
+				       , lec.cls_room
+				       , lec.lec_goal
+				       , lec.lec_yn
+				       , lec.svy_cd
+		               , CASE
+				           WHEN ap.app_yn = 'Y' AND ap.end_yn = 'Y' THEN '수강 완료'
+				           WHEN ap.app_yn = 'N' AND ap.end_yn = 'N' THEN
+				               CASE
+				                   WHEN now() < STR_TO_DATE(lec.lec_start_date, '%Y-%m-%d') THEN '승인 대기'
+				                   ELSE '미승인'
+				               END
+				           WHEN ap.app_yn = 'Y' AND ap.end_yn = 'N' THEN 
+				           	   CASE
+				           	   	   WHEN now() < STR_TO_DATE(lec.lec_start_date, '%Y-%m-%d') THEN '수강 대기'
+				           	   	   ELSE '수강 중'
+				           	   END
+				           ELSE '미승인'
+				         END as lec_status
+		FROM      		 tb_app_list ap
+		INNER JOIN		 tb_lec lec ON ap.lec_cd = lec.lec_cd
+		INNER JOIN 		 tb_userinfo ui ON lec.loginID = ui.loginID
+		WHERE     		 ap.loginID = #{loginID}
+		AND     		 ap.lec_cd = #{lec_cd}]]>
+	</select>
+</mapper>

@@ -1,0 +1,143 @@
+package kr.happyjob.study.exe.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.exe.model.CtSales;
+import kr.happyjob.study.exe.model.SelProduct;
+import kr.happyjob.study.exe.model.SpChart;
+import kr.happyjob.study.exe.service.SalesAnalysisService;
+
+@Controller
+@RequestMapping("/exe/")
+public class SalesAnalysisController {
+	
+	@Autowired
+	SalesAnalysisService service;
+	
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+
+	/**
+	 * 제품판매현황 조회페이지
+	 */
+	@RequestMapping("salesAnalysisvue.do")
+	public String salesAnalysisvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".salesAnalysisvue");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".salesAnalysisvue");
+		
+		return "exe/vueSalesAnalysisMgr";
+	}
+	
+
+	
+	//========================================
+	
+	/**
+	 * 제품판매현황 조회페이지
+	 */
+	@RequestMapping("salesAnalysis.do")
+	public String salesAnalysis(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".salesAnalysis");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".salesAnalysis");
+		
+		return "exe/salesAnalysisMgr";
+	}
+	
+
+	
+	/**
+	 * 제품판매현황 조회페이지
+	 */
+	@RequestMapping("saChart.do")
+	@ResponseBody
+	public Map<String,Object> saChart(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".saChart");
+		
+		Map<String,Object> resultMap = new HashMap<>();
+
+		List<CtSales> ctSales = service.ctSales();
+		
+		resultMap.put("ctSales", ctSales);
+		
+		logger.info("+ End " + className + ".saChart");
+		
+		return resultMap;
+	}
+	
+	
+	/**
+	 * 제품판매현황 조회페이지
+	 */
+	@RequestMapping("selCategory.do")
+	public String selCategory(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".selCategory");
+		
+
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+
+
+		List<SelProduct> selProductList = service.selProduct(paramMap);
+		int totalCnt = service.selProductTotal(paramMap);
+		
+		model.addAttribute("selProductList", selProductList);
+		model.addAttribute("totalCnt", totalCnt);
+		
+		logger.info("+ End " + className + ".selCategory");
+		
+		return "exe/selProductList";
+	}
+	
+	/**
+	 * 제품판매현황 조회페이지
+	 */
+	@RequestMapping("selProductChart.do")
+	@ResponseBody
+	public List<SpChart> selProductChart(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".selProductChart");
+		
+		List<SpChart> spChart = service.spChart(paramMap);
+		
+		logger.info("+ End " + className + ".selProductChart");
+		
+		return spChart;
+	}
+
+
+
+}

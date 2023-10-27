@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.sptins.dao.LearningMaterialDao">
+
+
+	<!-- 로그인한 강사가 진행중인 lec_cd 조회 -->
+	<select id="findLecCd" resultType="int">
+		/*kr.happyjob.study.sptins.dao.findLecCd*/
+		select lec_cd 
+		  from tb_lec
+		 where loginID = #{loginId}
+		   and lec_yn = 'N'
+	</select>
+
+
+	<!-- 주차 목록 조회 -->
+	<select id="lmFindWeeklyList" resultType="kr.happyjob.study.sptins.model.LearningMaterialModel">
+		/*kr.happyjob.study.sptins.dao.lmFindWeeklyList*/
+		select lec_cd, 
+			   weekly_no, 
+			   week_goal, 
+			   tlw.lec_file_no, 
+			   lec_file_upload_date
+		  from tb_lec_week tlw
+		       left join tb_lec_file tlf on (tlw.lec_file_no = tlf.lec_file_no)
+		 where lec_cd = #{lec_cd}
+		 order by cast(substring_index(weekly_no, '주차', 1) as unsigned)
+	</select>
+	
+	
+	<!-- 강의와 주차에 해당하는 lec_file_no 조회 -->
+	<select id="findLecFileNo" resultType="int">
+		/*kr.happyjob.study.sptins.dao.findLecFileNo*/
+		select lec_file_no 
+		  from tb_lec_week
+		 where lec_cd = #{lec_cd}
+		   and weekly_no = #{weekly_no}
+	</select>
+	
+	
+</mapper>
+

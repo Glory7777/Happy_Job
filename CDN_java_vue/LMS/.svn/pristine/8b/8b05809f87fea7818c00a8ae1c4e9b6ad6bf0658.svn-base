@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.sptadm.dao.NtDao">
+
+	<!-- 공지사항 목록 조회 -->
+	<select id = "listNotice" resultType = "kr.happyjob.study.sptadm.model.NtModel">
+		SELECT  nt.brd_no
+		      , nt.brd_title
+		      , nt.brd_ctt
+		      , ui.name as brd_wt
+		      , nt.loginID
+		      , nt.brd_reg_date
+		      , nt.brd_veiws_cnt
+		      , nt.brd_delete_yn
+		      , nt.ctg_cd
+		      
+		   from tb_board nt
+		   
+     inner JOIN tb_userinfo ui
+		     on ui.loginID = nt.loginID
+		WHERE nt.brd_delete_yn = 'N'
+          and ctg_cd = 1
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and nt.brd_title Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'regname'.toString()">
+						and ui.name LIKE CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+						             nt.brd_title Like CONCAT('%', #{searchText}, '%')
+						         or ui.name LIKE CONCAT('%', #{searchText}, '%') 
+						      )
+					</otherwise>
+				</choose>
+			</if>
+		
+		order by nt.brd_no DESC
+		LIMIT #{startPoint}, #{pageSize}
+	</select> <!-- 8.셀렉문으로 셀렉 -->
+	
+		
+	<!-- 공지사항 목록 총 갯수 조회 -->
+	<select id="totalCnt" resultType="int">
+		/*kr.happy.study.sptadm.dao.NtDao.totalCnt*/
+		SELECT COUNT(nt.brd_no) as tot_Cnt
+		FROM 	tb_board nt
+  inner JOIN    tb_userinfo ui
+          ON    ui.loginID = nt.loginID
+		WHERE nt.brd_delete_yn = 'N'
+		  and nt.ctg_cd = 1
+             
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'title'.toString()">
+						and nt.brd_title Like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'regname'.toString()">
+						and ui.name LIKE CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+						             nt.brd_title Like CONCAT('%', #{searchText}, '%')
+						         or ui.name LIKE CONCAT('%', #{searchText}, '%') 
+						      )
+					</otherwise>
+				</choose>
+			</if>
+	</select>	<!-- 10.셀렉문으로 카운터해서 데이터량 정하기 -->
+		
+	
+	
+	
+ 		<!-- 공지사항 단건 조회 : 공지제목 클릭시 -->  
+	<select id = "selectNotice" resultType = "kr.happyjob.study.sptadm.model.NtModel">
+		SELECT  nt.brd_no
+		      , nt.brd_title
+		      , nt.brd_ctt
+		      , ui.name as brd_wt
+		      , nt.loginID
+		      , nt.brd_reg_date
+		      , nt.brd_veiws_cnt
+		      , nt.brd_delete_yn
+		      , nt.ctg_cd
+		      , nt.sm_file_path
+		      , nt.sm_file_nm
+		      , nt.sm_file_uuid_nm
+		      , nt.sm_file_size
+		      , nt.sm_file_extend
+		      , nt.sm_file_logicalpath
+	   from tb_board nt
+			   
+	     inner JOIN tb_userinfo ui
+			     on ui.loginID = nt.loginID
+		WHERE nt.brd_no = #{brd_no}    
+	</select>
+	
+	<update id="noticeReadCntUp">
+		update tb_board
+		   set brd_veiws_cnt = brd_veiws_cnt+1
+		 where brd_no = #{brd_no} 
+	</update>
+	
+		
+		
+<!-- 	공지사항 신규등록(저장) -->
+	<insert id="insertNotice">
+       <selectKey resultType="string" keyProperty="brd_no" order="BEFORE">
+              select cast((IFNULL(max(cast(brd_no as unsigned)) ,0) + 1) as char(20)) 
+               from tb_board
+        </selectKey>
+			insert into tb_board
+			          (
+			            brd_no
+			          , brd_title
+			          , brd_ctt
+			          , brd_wt
+			          , loginID
+			          , brd_reg_date
+			          , brd_veiws_cnt
+			          , brd_delete_yn
+			          , ctg_cd
+			          )
+	                  values (
+	                      #{brd_no}
+	                     ,#{brd_title}
+	                     ,#{brd_ctt} 
+	                     ,#{userNm} 
+	                     ,#{loginId} 
+	                     , DATE_FORMAT(now(), '%Y-%m-%d')
+	                     ,0
+	                     ,'N'
+	                     ,1
+	                  )
+	</insert>
+	<!-- 삭제 유무 처리  -->
+		<update id="updateNotice">
+	       update tb_board
+	            set  brd_title = #{brd_title}
+                    , brd_ctt = #{brd_ctt} 
+	        where brd_no = #{brd_no}       
+	</update> 
+	
+    <delete 	id="deleteNotice">
+          update tb_board
+                set brd_delete_yn = 'Y'
+           where brd_no = #{brd_no}    
+    </delete>
+	
+	
+	
+	
+	<insert id="insertNoticefile">
+       <selectKey resultType="string" keyProperty="brd_no" order="BEFORE">
+              select cast((IFNULL(max(cast(brd_no as unsigned)) ,0) + 1) as char(20)) 
+               from tb_board
+        </selectKey>
+			insert into tb_board
+			          (
+			            brd_no
+			          , brd_title
+			          , brd_ctt
+			          , brd_wt
+			          , loginID
+			          , brd_reg_date
+			          , brd_veiws_cnt
+			          , brd_delete_yn
+			          , ctg_cd
+			          <if test="fileyn eq 'Y'.toString()">
+			          , sm_file_path
+			          , sm_file_nm
+			          , sm_file_uuid_nm
+			          , sm_file_size
+			          , sm_file_extend
+			          , sm_file_logicalpath
+			          </if>
+			          )
+	                  values (
+	                      #{brd_no}
+	                     ,#{brd_title}
+	                     ,#{brd_ctt} 
+	                     ,#{userNm} 
+	                     ,#{loginId} 
+	                     , DATE_FORMAT(now(), '%Y-%m-%d')
+	                     ,0
+	                     ,'N'
+	                     ,1
+	                     <if test="fileyn eq 'Y'.toString()">
+	                    ,#{fileinfo.file_loc} 
+	                    ,#{fileinfo.file_nm} 
+	                    ,#{fileinfo.file_nm_uuid} 
+	                    ,#{fileinfo.file_size} 
+	                    ,#{fileinfo.fileExtension}
+	                    ,#{fileinfo.vrfile_loc}
+	                    </if>
+	                  )
+	</insert>	
+	
+	<update id="updateNoticefile">
+	       update tb_board
+	            set  brd_title = #{brd_title}
+                    , brd_ctt = #{brd_ctt} 
+                    <if test="fileyn eq 'Y'.toString()">
+                    , sm_file_path = #{fileinfo.file_loc} 
+			        , sm_file_nm = #{fileinfo.file_nm} 
+			        , sm_file_uuid_nm = #{fileinfo.file_nm_uuid} 
+			        , sm_file_size = #{fileinfo.file_size} 
+			        , sm_file_extend = #{fileinfo.fileExtension}
+			        , sm_file_logicalpath  = #{fileinfo.vrfile_loc}
+			        </if>
+                    <if test="fileyn eq 'N'.toString()">
+                    , sm_file_path = ''
+			        , sm_file_nm = ''
+			        , sm_file_uuid_nm = '' 
+			        , sm_file_size = 0
+			        , sm_file_extend = ''
+			        , sm_file_logicalpath  = ''
+			        </if>
+	        where brd_no = #{brd_no}       
+	</update> 	
+	
+	
+</mapper>
+

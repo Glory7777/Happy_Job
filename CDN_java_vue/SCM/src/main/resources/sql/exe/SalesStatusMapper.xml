@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.exe.dao.SalesStatusDao">
+	
+	<!-- 매출현황 조회 -->
+	<select id="ssList" resultType="kr.happyjob.study.exe.model.SalesStatusModel">
+		/*kr.happyjob.study.exe.dao.ssList*/
+		SELECT ord.order_cd
+			  , p.pro_nm
+			  , ui.name
+			  , ord.refund_yn
+			  , ord.order_date 
+			  , CASE 
+			     WHEN ord.refund_yn = 1 
+			     THEN ord.order_cnt - COALESCE(rf.refund_cnt, 0)
+			     ELSE ord.order_cnt
+			    END AS order_cnt
+			  , CASE 
+			     WHEN ord.refund_yn = 1 
+			     THEN ord.order_price - COALESCE(rf.refund_price, 0)
+			     ELSE ord.order_price
+			    END AS order_price
+			  , CASE 
+				 WHEN ord.refund_yn = 1 
+				 THEN ord.order_cnt*(p.pro_sup_price-p.pro_unit_price) - 
+				 	COALESCE(rf.refund_cnt*(p.pro_sup_price-p.pro_unit_price), 0)
+				 ELSE ord.order_cnt*(p.pro_sup_price-p.pro_unit_price)
+  				END AS net_profit
+		   FROM tb_order ord
+     INNER JOIN tb_product p ON p.pro_cd = ord.pro_cd
+     INNER JOIN tb_userinfo ui ON ui.loginid = ord.loginid
+      LEFT JOIN tb_refund rf ON ord.order_cd = rf.order_cd AND ord.pro_cd = rf.pro_cd
+			<where>
+				<if test="(searchText != null) and (!searchText.equals(''))">
+					and (
+						ui.name Like CONCAT('%', #{searchText}, '%') or
+						p.pro_nm Like CONCAT('%', #{searchText}, '%') or
+						ord.order_cd Like CONCAT('%', #{searchText}, '%')
+					)
+				</if>		
+				<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+					and ord.order_date between #{searchStartDate} and #{searchEndDate}
+				</if>
+				<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+					and ord.order_date >= #{searchStartDate}
+				</if>
+				<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+					and ord.order_date <![CDATA[<=]]> #{searchEndDate}
+				</if>
+			</where>
+	   ORDER BY ord.order_date desc
+	   LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	<!-- 매출현황 갯수 조회 -->
+	<select id="ssTotal" resultType="int">
+		/*kr.happyjob.study.exe.dao.ssTotal*/
+		SELECT count(*) as tot_cnt
+		  FROM tb_order ord
+    INNER JOIN tb_product p ON p.pro_cd = ord.pro_cd
+    INNER JOIN tb_userinfo ui ON ui.loginid = ord.loginid
+     LEFT JOIN tb_refund rf ON ord.order_cd = rf.order_cd AND ord.pro_cd = rf.pro_cd
+		<where>
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				and (
+					ui.name Like CONCAT('%', #{searchText}, '%') or
+					p.pro_nm Like CONCAT('%', #{searchText}, '%') or
+					ord.order_cd Like CONCAT('%', #{searchText}, '%')
+				)
+			</if>		
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ord.order_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ord.order_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+		</where>
+	</select>
+	
+	
+</mapper>

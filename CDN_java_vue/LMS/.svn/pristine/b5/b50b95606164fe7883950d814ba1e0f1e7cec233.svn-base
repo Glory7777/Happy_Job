@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.sptstd.dao.ALearningMaterialDao">
+
+
+	<!-- 강의 코드 구하기 -->
+	<select id="selectLecCd" resultType="int">
+		select lec_cd
+		  from tb_app_list
+		 where loginID = #{loginId}
+		   and app_yn = 'Y'
+		   and end_yn = 'N'
+	</select>
+
+
+	<!-- 강의명 조회 -->
+	<select id="selectLecNm" resultType="string">
+		select lec_nm
+		  from tb_lec
+		 where lec_cd = #{lec_cd}
+	</select>
+
+
+	<!-- 주차 목록 조회 -->
+	<select id="lmFindWeeklyList" resultType="kr.happyjob.study.sptstd.model.ALearningMaterialModel">
+		select tlw.lec_cd,
+			   tlw.weekly_no,
+			   tlw.lec_file_no,
+			   tlf.lec_file_upload_date
+		  from tb_lec_week tlw
+			   left join tb_lec_file tlf on (tlw.lec_file_no = tlf.lec_file_no)
+		 where tlw.lec_cd = #{lec_cd}
+	</select>
+	
+	
+	<!-- 파일정보 불러오기 -->
+	<select id="selectWeek" resultType="kr.happyjob.study.sptins.model.FileInfoModel">
+		select lec_file_no,
+			   lec_file_upload_date,
+			   lec_file_ctt,
+			   lec_file_path,
+			   lec_file_nm,
+			   lec_file_size,
+		  	   lec_file_extend,
+			   lec_file_logical,
+			   lec_file_uuid_nm
+		  from tb_lec_file
+		 where lec_file_no = #{lec_file_no} 
+	</select>
+	
+	
+</mapper>

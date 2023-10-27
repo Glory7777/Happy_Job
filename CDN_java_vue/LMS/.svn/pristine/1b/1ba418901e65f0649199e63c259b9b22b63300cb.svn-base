@@ -1,0 +1,126 @@
+package kr.happyjob.study.sptadm.service;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import kr.happyjob.study.common.comnUtils.FileUtilCho;
+import kr.happyjob.study.sptadm.dao.NtDao;
+import kr.happyjob.study.system.model.ComnGrpCodModel;
+import kr.happyjob.study.sptadm.model.NtModel;
+
+@Service
+public class NtServiceImpl implements NtService {
+
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+		
+	
+	@Autowired
+	NtDao ntDao; // ntDao랑 자동여
+
+	// Root path for file upload 
+	@Value("${fileUpload.rootPath}")
+	private String rootPath;
+		
+	@Value("${fileUpload.virtualRootPath}")
+	private String virtualRootPath;
+		
+	@Value("${fileUpload.noticePath}")
+	private String noticePath;
+	
+	
+	@Override
+	public List<NtModel> listNotice(Map<String, Object> paramMap) throws Exception{ 
+
+		List<NtModel> listNotice = ntDao.listNotice(paramMap);//컨트롤에서 받아서 바로  다오로 던지고 받기
+		return listNotice;
+	}
+
+	@Override
+	public int totalCnt(Map<String, Object> paramMap) throws Exception {
+		int totalCnt = ntDao.totalCnt(paramMap);
+		return totalCnt;
+	}
+
+	@Override
+	public NtModel selectNotice(Map<String, Object> paramMap) throws Exception {
+
+			ntDao.noticeReadCntUp(paramMap);		
+		
+		return ntDao.selectNotice(paramMap);
+	}
+
+	/** 공지사항 등록 */
+	public int insertNotice(Map<String, Object> paramMap) throws Exception {
+		
+		return ntDao.insertNotice(paramMap);
+	}
+	
+	/** 공지사항 수정 */
+	public int updateNotice(Map<String, Object> paramMap) throws Exception {
+		
+		return ntDao.updateNotice(paramMap);
+	}
+	
+	/** 공지사항 삭제 */
+	public int deleteNotice(Map<String, Object> paramMap) throws Exception {
+		
+		return ntDao.deleteNotice(paramMap);
+	}
+	
+	/** 공지사항 등록 */
+	public int insertNoticefile(Map<String, Object> paramMap, HttpServletRequest request) throws Exception {
+		
+        MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)request;
+		
+		String itemFilePath = noticePath + File.separator;   // notice/    rootPath : x:\\FileRepository
+		                                                     // x:\\FileRepository\notice/a.jpg
+		
+		logger.info("   - rootPath : " + rootPath);
+		logger.info("   - itemFilePath : " + itemFilePath);
+		logger.info("   - virtualRootPath : " + virtualRootPath);
+		
+		// multipartHttpServletRequest  파일절보    파일명...     rootPath(x:\\FileRepository) + itemFilePath(notice/) + 파일명
+		FileUtilCho fileUtil = new FileUtilCho(multipartHttpServletRequest, rootPath, virtualRootPath, itemFilePath);
+		Map<String, Object> fileinfo = fileUtil.uploadFiles();
+		
+		//fileinfo.put("file_nm", file_nm);
+		//fileinfo.put("file_size", file_Size);
+		//fileinfo.put("file_loc", file_loc);
+		//fileinfo.put("vrfile_loc", vrfile_loc);
+		//fileinfo.put("fileExtension", fileExtension);
+		//fileinfo.put("file_nm_uuid", file_nm_uuid);
+		
+		logger.info("   - file_nm : " + fileinfo.get("file_nm"));
+		logger.info("   - file_size : " + fileinfo.get("file_size"));
+		logger.info("   - file_loc : " + fileinfo.get("file_loc"));
+		logger.info("   - vrfile_loc : " + fileinfo.get("vrfile_loc"));
+		logger.info("   - fileExtension : " + fileinfo.get("fileExtension"));
+		logger.info("   - file_nm_uuid : " + fileinfo.get("file_nm_uuid"));
+				
+		String file_nm = (String) fileinfo.get("file_nm");
+		
+		if(file_nm != "" && file_nm != null) {
+			paramMap.put("fileinfo", fileinfo);			
+			paramMap.put("fileyn","Y");				
+		} else {
+			paramMap.put("fileyn","N");	
+		}
+		
+		return ntDao.insertNoticefile(paramMap);
+		
+	}
+	
+	
+
+}

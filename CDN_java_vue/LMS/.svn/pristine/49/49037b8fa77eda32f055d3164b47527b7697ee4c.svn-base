@@ -1,0 +1,36 @@
+package kr.happyjob.study.mngins.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import kr.happyjob.study.mngins.model.AdviceModel;
+
+
+
+public interface AdviceMngDao {
+		
+		// 상담 목록
+		public List<AdviceModel> adviceList(Map<String, Object> paramMap) throws Exception;
+		
+		
+		// 목록 총 개수
+		public int totalcnt(Map<String, Object> paramMap) throws Exception;
+
+		// 상담 등록
+		public int insertAdv(Map<String, Object> paramMap) throws Exception;
+
+		// 상담 갱신
+		public int updateAdv(Map<String, Object> paramMap) throws Exception;
+
+		// 상담 삭제
+		public int deleteAdv(Map<String, Object> paramMap) throws Exception;
+
+		// 학생 목록 조회
+		public List<Map> stdList() throws Exception;
+
+		// 강의 내용 조회
+		public AdviceModel selectAdv(Map<String, Object> paramMap) throws Exception;
+
+}

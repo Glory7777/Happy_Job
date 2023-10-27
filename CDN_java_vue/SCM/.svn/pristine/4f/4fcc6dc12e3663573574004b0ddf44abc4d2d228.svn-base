@@ -1,0 +1,92 @@
+package kr.happyjob.study.dashboard.controller;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.dashboard.model.DashboardScmModel;
+import kr.happyjob.study.dashboard.service.DashboardScmService;
+import kr.happyjob.study.scm.model.NoticeModel;
+import kr.happyjob.study.scm.service.NoticeService;
+
+@Controller
+@RequestMapping("/dashboard/scm/")
+public class DashboardScmController {
+	
+	@Autowired
+	DashboardScmService dashboardScmService;
+	
+	// Get Logger for logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+	/**
+	 * SCM(메인대시보드) 건수
+	 */
+	@ResponseBody
+	@RequestMapping("data")
+	public Map<String, Object> getChartData(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		logger.info("+ Start " + className + ".getChartData");
+
+		
+		int getDataUnanswered = dashboardScmService.getDataUnanswered(paramMap);
+		int getDataUnrefund = dashboardScmService.getDataUnrefund(paramMap);
+		int getDataUndeli = dashboardScmService.getDataUndeli(paramMap);
+		
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+		
+		returnmap.put("getDataUnanswered", getDataUnanswered);
+		returnmap.put("getDataUnrefund", getDataUnrefund);
+		returnmap.put("getDataUndeli", getDataUndeli);
+		
+		logger.info("   - returnmap : " + returnmap);
+		logger.info("+ End " + className + ".getChartData");
+		
+		return returnmap;
+		
+	}	
+	
+	/**
+	 * SCM(메인대시보드) 상품 누적 판매/반품 총량
+	 */
+	@ResponseBody
+	@RequestMapping("chart")
+	public Map<String, Object>  listUndata(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".listUndata");
+		
+		List<DashboardScmModel> getTotalOrderList = dashboardScmService.getTotalOrder(paramMap);
+		List<DashboardScmModel> getTotalRefundList = dashboardScmService.getTotalRefund(paramMap);
+		
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+		
+		returnmap.put("getTotalOrderList", getTotalOrderList);
+		returnmap.put("getTotalRefundList", getTotalRefundList);
+		
+		logger.info("   - getTotalOrderList : " + getTotalOrderList);
+		logger.info("   - getTotalRefundList : " + getTotalRefundList);
+		logger.info("+ End " + className + ".listUndata");
+
+		return returnmap;
+	
+	}
+}

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.mngstd.dao.SubmittedWorkDao">
+
+	<!-- 강의 코드 조회 -->
+	<select id="findLecCd" resultType="int">
+		select lec_cd
+		  from tb_app_list
+		 where loginID = #{loginID}
+		   and app_yn = 'Y'
+		   and end_yn = 'N'
+	</select>
+
+
+	<!-- 강의 정보 조회 -->
+	<select id="findLecInfo" resultType="kr.happyjob.study.mngadm.model.LectureModel">
+		select tl.lec_cd,
+			   tl.lec_nm,
+			   tl.loginID,
+			   tl.lec_start_date,
+			   tl.lec_end_date,
+			   ui.name
+		  from (select lec_cd,
+			   		   lec_nm,
+			           loginID,
+			   		   lec_start_date,
+			   		   lec_end_date
+		  		  from tb_lec
+		 		 where lec_cd = #{lec_cd}) tl
+		 	inner join tb_userinfo ui on (tl.loginID = ui.loginID)
+	</select>
+
+
+	<!-- 과제 목록 조회 -->
+	<select id="findHwkList" resultType="kr.happyjob.study.mngins.model.HwkModel">
+		select lec_cd,
+			   hwk_no,
+			   hwk_nm,
+			   hwk_ctt,
+			   hwk_start_date,
+			   hwk_end_date,
+			   hwk_file_no
+		  from tb_hwk
+		 where lec_cd = #{lec_cd}
+		 order by hwk_no ASC
+		 LIMIT #{startpoint}, #{pageSize}
+	</select>
+	
+	
+	<!-- 과제 목록 총개수 -->
+	<select id="totalcnt" resultType="int">
+		select COUNT(hwk_no) AS tot_cnt 
+          from tb_hwk
+          where lec_cd = #{lec_cd}
+	</select>
+	
+	
+	<!-- 학생이 제출한 과제 목록 조회 -->
+	<select id="findSmHwkList" resultType="int">
+		select hwk_no
+		  from tb_hwk_sm
+		 where lec_cd = #{lec_cd}
+		   and loginID = #{loginID}
+	</select>
+	
+	
+	<!-- 신규저장 파일 넣기 -->
+	<insert id="insertSmFile">
+		<selectKey resultType="int" keyProperty="sm_file_no" order="AFTER">
+			select last_insert_id()
+		</selectKey>	
+		
+		insert into tb_sm_file(
+			sm_file_path,
+			sm_file_nm,
+			sm_file_size,
+			sm_file_extend,
+			sm_file_logical,
+			sm_file_uuid_nm
+		) values (
+			#{fileinfo.file_loc},
+			#{fileinfo.file_nm},
+			#{fileinfo.file_size},
+			#{fileinfo.fileExtension},
+			#{fileinfo.vrfile_loc},
+			#{fileinfo.file_nm_uuid}
+	)
+	</insert>
+
+
+	<!-- 신규저장 과제제출 테이블 -->
+	<insert id="insertHwkSm">
+		insert into tb_hwk_sm(
+			lec_cd,
+			hwk_no,
+			loginID,
+			sm_file_no,
+			sm_date,
+			sm_ctt
+		) values(
+			#{lec_cd},
+			#{hwk_no},
+			#{loginID},
+			#{sm_file_no},
+			now(),
+			#{sm_ctt}
+		)
+	</insert>
+
+
+	<!-- 과제 제출 여부 조회 -->
+	<select id="findHwkSm" resultType="kr.happyjob.study.mngstd.model.SubmitHwkModel">
+		select lec_cd,
+			   hwk_no,
+			   loginID,
+			   sm_file_no,
+			   sm_date,
+			   sm_ctt
+		  from tb_hwk_sm
+		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+		   and loginID = #{loginID}
+	</select>
+
+
+	<!-- 제출된 파일 정보 조회 -->
+	<select id="findSmFileInfo" parameterType="int" resultType="kr.happyjob.study.mngstd.model.SmFileModel">
+		select sm_file_no,
+			   sm_file_path,
+			   sm_file_nm,
+			   sm_file_size,
+			   sm_file_extend,
+			   sm_file_logical,
+			   sm_file_uuid_nm
+		  from tb_sm_file
+		 where sm_file_no = #{sm_file_no}
+	</select>
+
+
+	<!-- 파일번호 조회 -->
+	<select id="findSmFileNo" resultType="int">
+		select sm_file_no
+		  from tb_hwk_sm
+		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+		   and loginID = #{loginID}
+	</select>
+
+
+	<!-- 과제 삭제 -->
+	<delete id="deleteHwkSm">
+		delete
+		  from tb_hwk_sm
+ 		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+		   and loginID = #{loginID}
+	</delete>
+	
+
+	<!-- 제출 파일 삭제 -->
+	<delete id="deleteSmFile">
+		delete 
+		  from tb_sm_file
+		 where sm_file_no = #{sm_file_no}
+	</delete>
+
+
+	<!-- tb_hwk에 파일번호 갱신 -->
+	<update id="updateHwkSm">
+		update tb_hwk_sm
+		   set sm_date = now(),
+		       sm_ctt = #{sm_ctt}
+		       <if test="(sm_file_no != null) and (sm_file_no != 0)" >
+		       , sm_file_no = #{sm_file_no}
+		       </if>
+		 where lec_cd = #{lec_cd}
+		   and hwk_no = #{hwk_no}
+		   and loginID = #{loginID}
+	</update>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</mapper>
+

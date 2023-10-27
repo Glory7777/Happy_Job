@@ -1,0 +1,291 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>성적조회</title>
+<!-- sweet alert import -->
+<script src='${CTX_PATH}/js/sweetalert/sweetalert.min.js'></script>
+<jsp:include page="/WEB-INF/view/common/common_include.jsp"></jsp:include>
+<!-- sweet swal import -->
+              
+<script type="text/javascript">
+	// 페이징 설정
+	var pageSize = 5;
+	var pageBlockSize = 5;
+	
+	$(function() {
+
+		// 성적 조회
+		fn_searchList();
+		
+		// 버튼 이벤트 등록
+		fRegisterButtonClickEvent();
+	});
+	
+	 
+	/** 버튼 이벤트 등록 */
+	function fRegisterButtonClickEvent() {
+		$('a[name=btn]').click(function(e) {
+			e.preventDefault();
+	
+			var btnId = $(this).attr('id');
+	
+			switch (btnId) {
+				case 'btnSave' :
+					fn_Save();
+					break;
+				case 'btnSavefile' :	
+					fn_Savefile();
+					break;					
+				case 'btnDelete' :
+					fn_Delete();
+					break;
+				case 'btnClosefile' :	
+				case 'btnClose' :
+					gfCloseModal();
+					if($("#action").val() == "I") {
+	    				fn_serachlist();
+	    			} else if($("#action").val() == "U") {
+	    				fn_serachlist($("#currentPageTest").val());
+	    			} else if($("#action").val() == "D") {
+	    				fn_serachlist();
+	    			}
+					break;
+				case 'btnDeletefile' :
+					fn_Deletefile();
+					break;
+					
+			}
+		});
+		
+		// show 버튼 등록
+		$('a[name=showBtn]').click(function(e) {
+			e.preventDefault();
+	
+			var showBtnId = $(this).attr('id');
+	
+			switch (showBtnId) {
+				case 'ingLec' :
+					$("#show").val("N");
+					fn_searchList();
+					break;
+				case 'endLec' :
+					$("#show").val("Y");
+					fn_searchList();
+					break;
+			}
+		});
+	}
+
+	//------------- 성적조회 --------------------------
+	
+	
+    function fn_searchList(currentPage) {
+    	
+    	var currentPage = currentPage || 1;
+    	
+    	var param = {
+    			pageSize : pageSize,
+    			currntPage : currentPage,
+	   			searchtext : $("#searchtext").val(),
+	   			show : $("#show").val()
+    	}
+    	
+       var listcallback = function(returndata) {
+    		console.log(returndata);
+    		
+    		$("#gradesList").empty().append(returndata);
+    		
+    		console.log($("#totalcnt").val());
+    		
+    		var totalcnt = $("#totalcnt").val();
+    		
+    		var paginationHtml = getPaginationHtml(currentPage, totalcnt, pageSize, pageBlockSize, 'fn_searchList');
+    		console.log("paginationHtml : " + paginationHtml);
+    		//swal(paginationHtml);
+    		$("#gradesPagination").empty().append( paginationHtml );
+    		
+    		// 현재 페이지 설정
+    		$("#currentPageTest").val(currentPage);
+    		
+    	}
+    	
+    	callAjax("/tut/gradesList.do", "post", "text", true, param, listcallback);
+    	
+    }
+    
+    
+
+	 
+	 
+	//------------- 강의 눌렀을 때 학생 목록 조회 --------------------------
+	
+	//페이징 설정
+	var stuPageSize = 5;
+	var stuPageBlockSize = 5;
+	
+	// 학생 목록 조회
+	function fn_findStdList(test_cd){
+		
+		var test_cd = test_cd;
+		
+		var stuCurrentPage = null;
+		
+		fn_StdListSet(stuCurrentPage, test_cd);
+		
+	} 
+	
+	function fn_StdListSet(stuCurrentPage, test_cd){
+		
+		var test_cd = [test_cd];
+		
+		var stuCurrentPage = stuCurrentPage || 1; 
+		
+		var param = {
+			stuPageSize : stuPageSize,
+			stuCurrentPage : stuCurrentPage,
+			test_cd : test_cd[0]
+		}
+		
+		var listcallback = function(returndata) {
+			
+			$("#stuList").empty().append(returndata);
+			
+			var stuTotalcnt = $("#stuTotalcnt").val();
+			
+			var paginationHtml = getPaginationHtml(stuCurrentPage, stuTotalcnt, stuPageSize, stuPageBlockSize, 'fn_StdListSet', test_cd);
+			console.log("paginationHtml : " + paginationHtml);
+			//swal(paginationHtml);
+			$("#stuPagination").empty().append( paginationHtml );
+			
+		}
+		
+		callAjax("/tut/stuList.do", "post", "text", true, param, listcallback);
+	}
+	
+    
+</script>
+
+</head>
+<body>
+<form id="myForm" action=""  method="">
+	  <input type="hidden" id="currentPageTest" />
+	  <input type="hidden" id="action"  name="action" />
+	  <input type="hidden" name="show" id="show" value="N">
+	
+	<!-- 모달 배경 -->
+	<div id="mask"></div>
+
+	<div id="wrap_area">
+
+		<h2 class="hidden">header 영역</h2>
+		<jsp:include page="/WEB-INF/view/common/header.jsp"></jsp:include>
+
+		<h2 class="hidden">컨텐츠 영역</h2>
+		<div id="container">
+			<ul>
+				<li class="lnb">
+					<!-- lnb 영역 --> <jsp:include
+						page="/WEB-INF/view/common/lnbMenu.jsp"></jsp:include> <!--// lnb 영역 -->
+				</li>
+				<li class="contents">
+					<!-- contents -->
+					<h3 class="hidden">contents 영역</h3> <!-- content -->
+					<div class="content">
+
+						<p class="Location">
+							<a href="../dashboard/dashboard.do" class="btn_set home">메인으로</a> 
+							<span class="btn_nav bold">학습관리</span> 
+							<span class="btn_nav bold">성적조회 </span> 
+							<a href="/tut/checkGrades.do" class="btn_set refresh">새로고침</a>
+						</p>
+						
+						<div class="btn_areaA mt10">
+							<a href="" class="btnType blue" id="ingLec" name="showBtn"><span>진행중 강의</span></a> 
+							<a href="" class="btnType gray" id="endLec" name="showBtn"><span>종료된 강의</span></a>
+						</div>
+
+						<p class="conTitle">
+							<span>성적조회</span> 
+							<span class="fr"> 
+							    <input type="text" id="searchtext" name="searchtext"  style="width: 150px; height: 25px;" placeholder="강의명을 입력하세요" />
+							    <a class="btnType blue" href="javascript:fn_searchList();" name="modal"><span>검색</span></a>
+							</span>
+						</p>
+						
+						<div class="divComGrpCodList">
+							<table class="col">
+								<caption>caption</caption>
+								<colgroup>
+									<col width="10%">
+									<col width="35%">
+									<col width="15%">
+									<col width="20%">
+									<col width="20%">
+								</colgroup>
+	
+								<thead>
+									<tr>
+										<th colspan="5">성적 조회</th>
+									</tr>
+									<tr>
+										<th scope="col">시험번호</th>
+										<th scope="col">시험명</th>
+										<th scope="col">시험 시작일</th>
+										<th scope="col">시험 종료일</th>
+										<th scope="col">강의명</th>
+									</tr>
+								</thead>
+								<tbody id="gradesList"></tbody>
+							</table>
+						</div>
+	
+						<div class="paging_area"  id="gradesPagination"> </div>
+						
+						<div>  &nbsp;</div>
+						
+						<div class="divComGrpCoddetail">
+							<table class="col">
+								<caption>caption</caption>
+								<colgroup>
+									<col width="20%">
+									<col width="20%">
+									<col width="20%">
+									<col width="20%">
+									<col width="20%">
+								</colgroup>
+	
+								<thead>
+									<tr>
+										<th colspan="5">시험 응시 상황</th>
+									</tr>
+									<tr>
+										<th scope="col">학생 ID</th>
+										<th scope="col">학생이름</th>
+										<th scope="col">점수</th>
+										<th scope="col">합격여부</th>
+										<th scope="col">응시일</th>
+									</tr>
+								</thead>
+								<tbody id="stuList"></tbody>
+							</table>
+						</div>
+	
+						<div class="paging_area"  id="stuPagination"> </div>
+						
+					</div> <!--// content -->
+
+					<h3 class="hidden">풋터 영역</h3>
+						<jsp:include page="/WEB-INF/view/common/footer.jsp"></jsp:include>
+				</li>
+			</ul>
+		</div>
+	</div>
+	
+</form>
+</body>
+</html>

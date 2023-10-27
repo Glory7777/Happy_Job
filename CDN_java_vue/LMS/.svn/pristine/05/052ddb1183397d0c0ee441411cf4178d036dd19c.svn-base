@@ -1,0 +1,277 @@
+package kr.happyjob.study.sptadm.controller;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.sptadm.model.NtModel;
+import kr.happyjob.study.sptadm.service.NtService;
+
+@Controller
+@RequestMapping("/notice/")// 0. 제일처음 받아옴. 
+public class NtController {
+	
+	@Autowired
+	NtService ntService;
+	
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+	
+	
+	// 처음 로딩될 때 공지사항 연결
+	@RequestMapping("aNotice.do") // 0. 상위 개체 + aNotice.do // /notice/aNotice.do 가 되는 것임
+	public String notice(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+
+		logger.info("+ Start " + className + ".aNotice");
+		logger.info("   - paramMap : " + paramMap);
+		String userType = (String) session.getAttribute("user_type"); // 유저타입 가지고 있기
+		paramMap.put("userType", userType);
+		String loginID = (String) session.getAttribute("loginId"); // 로그인 세션에서 로그인 아이디 가지고 있기
+		paramMap.put("loginID", loginID);
+		System.out.println(loginID);
+//		paramMap.put("writer", loginID);
+		
+		return "sptadm/notice";  // 0. 리턴 경로로 받아온 값들을 줌
+	}
+	
+	// 처음 로딩될 때 공지사항 연결
+	@RequestMapping("aNoticevue.do") // 0. 상위 개체 + aNotice.do // /notice/aNotice.do 가 되는 것임
+	public String aNoticevue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+
+		logger.info("+ Start " + className + ".aNoticevue");
+		logger.info("   - paramMap : " + paramMap);
+		String userType = (String) session.getAttribute("user_type"); // 유저타입 가지고 있기
+		model.addAttribute("userType", userType);
+		String loginID = (String) session.getAttribute("loginId"); // 로그인 세션에서 로그인 아이디 가지고 있기
+		model.addAttribute("loginID", loginID);
+		//System.out.println(loginID);
+//		paramMap.put("writer", loginID);
+		
+		logger.info("+ End " + className + ".aNoticevue");
+		
+		return "sptadm/noticevue";  // 0. 리턴 경로로 받아온 값들을 줌
+	}	
+	
+	/**
+	 * 공지사항 목록 카운트
+	 */
+	@RequestMapping("listNotice.do") // 6. fnSearchList 함수에서 값을 받아옴
+	public String listnotice(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".listNotice");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currntPage = Integer.parseInt((String) paramMap.get("currntPage"));   
+		int startPoint = ( currntPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startPoint", startPoint);
+		
+		List<NtModel> listNotice = ntService.listNotice(paramMap); // 7. listNotice를 서비스에서 paramMap값으로실행
+		
+		int totalCnt = ntService.totalCnt(paramMap); // 9. 서비스에서 실행한 토탈값 받아오기
+		
+		model.addAttribute("listNotice", listNotice);
+		model.addAttribute("totalCnt", totalCnt);
+		
+		logger.info("+ End " + className + ".listnotice");
+
+		return "sptadm/noticeList"; // 11. 이 값들을 다시 리스트 jsp로 ㄱㄱ
+	}
+	
+	/**
+	 * 공지사항 목록 카운트  Vue
+	 */
+	@RequestMapping("listNoticevue.do") // 6. fnSearchList 함수에서 값을 받아옴
+	@ResponseBody
+	public Map<String, Object> listNoticevue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".listNoticevue");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currntPage = Integer.parseInt((String) paramMap.get("currntPage"));   
+		int startPoint = ( currntPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startPoint", startPoint);
+		
+		List<NtModel> listNotice = ntService.listNotice(paramMap); // 7. listNotice를 서비스에서 paramMap값으로실행
+		
+		int totalCnt = ntService.totalCnt(paramMap); // 9. 서비스에서 실행한 토탈값 받아오기
+		
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+		
+		returnmap.put("listNotice", listNotice);
+		returnmap.put("totalCnt", totalCnt);
+		
+		logger.info("+ End " + className + ".listNoticevue");
+
+		return returnmap; // 11. 이 값들을 다시 리스트 jsp로 ㄱㄱ
+	}
+	
+	/**
+	 * 공지사항 개별 조회
+	 */
+	@RequestMapping("selectNotice.do")
+	@ResponseBody
+	public Map<String, Object> selectNotice(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".selectNotice");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		NtModel	sectInfo = ntService.selectNotice(paramMap);
+		
+		
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+		
+	   returnmap.put("sectInfo", sectInfo);
+		logger.info("   - paramMap : " + sectInfo);
+		logger.info("+ End " + className + ".selectNotice");
+
+		return returnmap;
+	}
+	
+	// 공지사항 신규등록, 업데이트
+	@RequestMapping("noticeSave.do")
+	@ResponseBody
+	public Map<String, Object> noticeSave(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".noticeSave");
+		logger.info("   - paramMap : " + paramMap);
+		
+		String action = (String)paramMap.get("action");
+		String resultMsg = "";
+		
+		// 사용자 정보 설정
+		paramMap.put("loginId", session.getAttribute("loginId"));
+		logger.info("loginId : " + paramMap.get("loginId"));
+		
+		paramMap.put("userNm", session.getAttribute("userNm"));
+		logger.info("userNm : " + paramMap.get("userNm"));
+		
+		if ("I".equals(action)) {
+			// 그룹코드 신규 저장
+			ntService.insertNotice(paramMap);
+			resultMsg = "저장";
+		} else if("U".equals(action)) {
+			// 그룹코드 수정 저장
+			ntService.updateNotice(paramMap);
+			resultMsg = "수정";
+			System.out.println(paramMap);
+		}else if("D".equals(action)) {
+			ntService.deleteNotice(paramMap);
+			resultMsg = "삭제";
+		}		
+		else {
+			resultMsg = "FALSE : 등록에 실패하였습니다.";
+		}
+		
+		//결과 값 전송
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		resultMap.put("resultMsg", resultMsg);
+	    
+	    return resultMap;
+	}
+	
+	// 공지사항 신규등록, 업데이트
+	@RequestMapping("noticeSavefile.do")
+	@ResponseBody
+	public Map<String, Object> noticeSavefile(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".noticeSavefile");
+		logger.info("   - paramMap : " + paramMap);
+		
+		String action = (String)paramMap.get("action");
+		String resultMsg = "";
+		
+		// 사용자 정보 설정
+		paramMap.put("loginId", session.getAttribute("loginId"));
+		logger.info("loginId : " + paramMap.get("loginId"));
+		
+		paramMap.put("userNm", session.getAttribute("userNm"));
+		logger.info("userNm : " + paramMap.get("userNm"));
+		
+		if ("I".equals(action)) {
+			// 그룹코드 신규 저장
+			ntService.insertNoticefile(paramMap, request);
+			resultMsg = "저장";
+		} else if("U".equals(action)) {
+			// 그룹코드 수정 저장
+			ntService.updateNoticefile(paramMap, request);
+			resultMsg = "수정";
+			System.out.println(paramMap);
+		}else if("D".equals(action)) {
+			ntService.deleteNotice(paramMap);
+			resultMsg = "삭제";
+		}		
+		else {
+			resultMsg = "FALSE : 등록에 실패하였습니다.";
+		}
+		
+		//결과 값 전송
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		resultMap.put("resultMsg", resultMsg);
+	    
+	    return resultMap;
+	}
+	
+	/**
+	 * 첨부파일 다운로드
+	 */
+	@RequestMapping("noticedownload.do")
+	public void noticedownload(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+	
+		logger.info("+ Start " + className + ".noticedownload");
+		logger.info("   - paramMap : " + paramMap);
+		
+		// 첨부파일 조회
+		NtModel	sectInfo = ntService.selectNotice(paramMap);
+		
+		// sectinfo.getFile_nm()  첨부 파일명
+		// sectinfo.getPhysic_path()  물리경로  X:\.....
+		
+		byte fileByte[] = FileUtils.readFileToByteArray(new File(sectInfo.getSm_file_path()));
+		
+		response.setContentType("application/octet-stream");
+	    response.setContentLength(fileByte.length);
+	    response.setHeader("Content-Disposition", "attachment; fileName=\"" + URLEncoder.encode(sectInfo.getSm_file_nm(),"UTF-8")+"\";");
+	    response.setHeader("Content-Transfer-Encoding", "binary");
+	    response.getOutputStream().write(fileByte);
+	     
+	    response.getOutputStream().flush();
+	    response.getOutputStream().close();
+
+		logger.info("+ End " + className + ".noticedownload");
+	}
+}

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.cus.dao.RefundHistoryDao">
+
+	<!-- 반품 목록 조회 -->
+	<select id="refundHistoryList" resultType="kr.happyjob.study.cus.model.RefundHistoryModel">
+		/*kr.happyjob.study.cus.dao.refundHistoryList*/
+		select ref.refund_cd
+				, ord.order_cd
+				, pro.pro_nm
+				, pro.pro_model_nm
+				, ord.order_date
+				, ref.refund_cnt
+				, ref.refund_price
+				, ref.refund_date
+				, ref.refund_text
+				, ref.refund_st
+		from tb_refund ref
+		        inner join tb_order ord on (ref.order_cd = ord.order_cd and ref.pro_cd = ord.pro_cd)
+		        inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+		</where>
+				and pro.pro_cd != 0 and ord.loginid = #{loginId}
+		order by CAST(ref.refund_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+	<!-- 목록 전체 갯수 조회 -->
+	<select id="totalHistory" resultType="int">
+		/*kr.happyjob.study.cus.dao.totalHistory*/
+		select count(ref.refund_cd) AS tot_cnt
+		from tb_refund ref
+		        inner join tb_order ord on (ref.order_cd = ord.order_cd and ref.pro_cd = ord.pro_cd)
+		        inner join tb_product pro on (ref.pro_cd = pro.pro_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+		</where>
+		 and pro.pro_cd != 0 and ord.loginid = #{loginId}
+	</select>
+	
+</mapper>

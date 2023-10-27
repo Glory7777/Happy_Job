@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.EmInfoDao">
+
+	<!-- 내부직원 목록 조회 -->
+	<select id="emInfoList" resultType="kr.happyjob.study.scm.model.EmInfoModel">
+		/*kr.happyjob.study.scm.dao.emInfoList*/
+		select user.loginid
+		, user.name
+		, user.password
+		, user.user_hp
+		, user.user_email
+		, user.reg_date
+		, user.addr
+		, user.addr_dt
+		, user.zip_cd
+		, user.account_num
+		, user.bank_cd
+		, dc.detail_name as user_type
+		, do.detail_name as user_yn
+		from tb_userinfo user
+		inner join tb_detail_code dc on dc.detail_code = user.user_type and
+		dc.group_code like 'userCD' and dc.detail_code not like 'C'
+		inner join tb_detail_code do on do.detail_code = user.user_yn and
+		do.group_code like 'deleteCD'
+		<where>
+			<if test="(searchDel != null) and (!searchDel.equals(''))">
+				and user_yn = #{searchDel}
+			</if>
+
+			<if test="(searchtext != null) and (!searchtext.equals(''))">
+				<choose>
+					<when test="searchUserType eq '배송담당자'.toString()">
+						and user.name Like CONCAT('%', #{searchtext}, '%')
+						and user_type = 'D'
+					</when>
+					<when test="searchUserType eq '임원'.toString()">
+						and user.name Like CONCAT('%', #{searchtext}, '%')
+						and user_type = 'E'
+					</when>
+					<when test="searchUserType eq '구매담당자'.toString()">
+						and user.name Like CONCAT('%', #{searchtext}, '%')
+						and user_type = 'P'
+					</when>
+					<when test="searchUserType eq '담당자'.toString()">
+						and user.name Like CONCAT('%', #{searchtext}, '%')
+						and user_type = 'S'
+					</when>
+					<otherwise>
+						and user.name Like CONCAT('%', #{searchtext}, '%')
+					</otherwise>
+				</choose>
+			</if>
+
+			<if test="(searchtext == null or searchtext.equals(''))">
+				<choose>
+					<when test="searchUserType eq '배송담당자'.toString()">
+						and user_type = 'D'
+					</when>
+					<when test="searchUserType eq '임원'.toString()">
+						and user_type = 'E'
+					</when>
+					<when test="searchUserType eq '구매담당자'.toString()">
+						and user_type = 'P'
+					</when>
+					<when test="searchUserType eq '담당자'.toString()">
+						and user_type = 'S'
+					</when>
+				</choose>
+			</if>
+		</where>
+		order by user_type
+		LIMIT #{startpoint}, #{pageSize}
+	</select>
+
+	<!-- 내부직원 카운트 조회 -->
+	<select id="emInfoTotalCnt" resultType="int">
+		/*kr.happyjob.study.scm.dao.emInfoTotalCnt*/
+		select COUNT(user.loginid)
+		AS tot_cnt
+		from tb_userinfo user
+		where user_type not like 'C'
+	</select>
+
+	<!-- 내부직원 한건 조회 -->
+	<select id="emInfoSelect" resultType="kr.happyjob.study.scm.model.EmInfoModel">
+		/*kr.happyjob.study.scm.dao.emInfoSelect*/
+		select user.loginid
+		, user.name
+		, user.password
+		, user.user_hp
+		, user.user_email
+		, user.reg_date
+		, user.addr
+		, user.addr_dt
+		, user.zip_cd
+		, user.account_num
+		, user.bank_cd
+		, dc.detail_name as user_type
+		, user.user_yn
+		from tb_userinfo user
+		inner join tb_detail_code dc on dc.detail_code = user.user_type and
+		dc.group_code like 'userCD'
+		where user.loginid = #{loginid}
+	</select>
+
+	<!-- 내부직원 신규 등록 -->
+	<insert id="insertEmInfo">
+		insert into tb_userinfo
+		( loginid
+		, name
+		, password
+		, user_hp
+		, user_email
+		, reg_date
+		, addr
+		, addr_dt
+		, zip_cd
+		, account_num
+		, bank_cd
+		, user_type
+		, user_yn
+		) values(
+		#{loginid}
+		, #{name}
+		, #{password}
+		, #{user_hp}
+		, #{user_email}
+		, DATE_FORMAT(now(), '%Y-%m-%d')
+		, #{addr}
+		, #{addr_dt}
+		, #{zip_cd}
+		, #{account_num}
+		, #{bank_select}
+		, (
+		SELECT detail_code
+		FROM tb_detail_code
+		WHERE detail_name = #{user_type}
+		)
+		, '0'
+		)
+	</insert>
+
+	<!-- 내부직원 정보 수정 -->
+	<update id="updateEmInfo">
+		update tb_userinfo user
+		set
+		user.loginid = #{loginid}
+		, user.name = #{name}
+		, user.password = #{password}
+		, user.user_hp = #{user_hp}
+		, user.user_email = #{user_email}
+		, user.addr = #{addr}
+		, user.addr_dt = #{addr_dt}
+		, user.zip_cd = #{zip_cd}
+		, user.account_num = #{account_num}
+		, user.bank_cd = #{bank_select}
+		, user.user_type =
+		(
+		SELECT detail_code
+		FROM tb_detail_code
+		WHERE detail_name = #{user_type}
+		)
+		where loginid = #{loginid}
+	</update>
+
+	<!-- 내부직원 삭제 -->
+	<update id="deleteEmInfo">
+		update tb_userinfo
+		set user_yn = '1'
+		where loginid = #{loginid}
+	</update>
+
+</mapper>

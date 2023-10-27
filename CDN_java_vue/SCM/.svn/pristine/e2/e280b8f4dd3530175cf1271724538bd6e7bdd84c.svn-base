@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.scm.dao.DeliveryDao">
+
+	<!-- 상품목록 단건 조회 -->
+	<select id="selectDelivery" resultType="kr.happyjob.study.scm.model.DeliveryModel">
+		SELECT od.order_cd
+			  ,od.pro_cd  
+			  ,od.order_date 
+			  ,od.loginid 
+			  ,pd.pro_nm 
+			  ,od.order_cnt
+			  ,pd.pro_stock
+		FROM tb_order od 
+		INNER JOIN tb_product pd ON od.pro_cd = pd.pro_cd  
+		WHERE od.order_cd = #{order_cd}
+		AND od.pro_cd = #{pro_cd}
+	</select>
+	
+	<!-- 배송 등록 -->
+	<insert id="insertDelivery">
+		<selectKey resultType="string" keyProperty="deli_cd" order="BEFORE">
+			select cast((ifnull(max(cast(deli_cd as unsigned)) ,0) + 1) as char(20)) 
+            from tb_delivery
+		</selectKey>
+		insert into tb_delivery (
+									deli_cd
+									,order_cd
+									,pro_cd
+									,deli_st
+									,deli_date
+									,deli_cnt
+								) values (
+									#{deli_cd}
+									,#{order_cd}
+									,#{pro_cd}
+									,'0'
+									,DATE_FORMAT(now(), '%Y-%m-%d')
+									,#{deli_cnt}
+								)
+	</insert>
+	<!-- 주문상태 업데이트-->
+	<insert id="updateOrderState">
+	       update tb_order  
+	            set  order_st  = '1'
+	        where order_cd = #{order_cd}
+	        and pro_cd = #{pro_cd}
+	</insert>
+	
+	<!-- 배송 지시서 등록-->
+	<insert id="insertDirection">
+		<selectKey resultType="string" keyProperty="direc_cd" order="BEFORE">
+			select cast((ifnull(max(cast(direc_cd as unsigned)) ,0) + 1) as char(20)) 
+            from tb_direction
+		</selectKey>
+		insert into tb_direction
+		            (		            
+		                direc_cd, 
+		                direc_date, 
+		                direc_type, 
+		                direc_note, 
+		                loginid, 
+		                pur_cd, 
+		                pro_cd, 
+		                deli_cd, 
+		                refund_cd, 
+		                order_cd		                    
+		            ) values (
+		                #{direc_cd}, 
+		                DATE_FORMAT(now(), '%Y-%m-%d'),
+		                '0',
+		                '배송',		                
+		                #{loginid},
+		                null,
+		                #{pro_cd},
+		                (select Max(deli_cd * 1) from tb_delivery),
+		                null,
+		                #{order_cd}		                           
+		            )
+		
+	</insert>
+	
+	<update id="updateProductStock">
+	       update tb_product 
+	            set  pro_stock  = #{pro_stock}
+	        where pro_cd = #{pro_cd}  
+	</update>
+	
+</mapper>

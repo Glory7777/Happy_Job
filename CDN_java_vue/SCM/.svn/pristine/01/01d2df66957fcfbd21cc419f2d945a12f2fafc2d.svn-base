@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.dashboard.dao.DashboardExeDao">
+	
+	<select id="lineChart" resultType="kr.happyjob.study.dashboard.model.MonthProfitModel">
+		SELECT
+		    DATE_FORMAT(order_date, '%Y-%m') AS kmonth,
+		    SUM(order_price)/10000 AS month_profit
+		FROM
+		    tb_order
+	    WHERE
+    		order_date >= NOW() - INTERVAL 1 YEAR
+		GROUP BY
+		    DATE_FORMAT(order_date, '%Y-%m')
+		ORDER BY
+		    DATE_FORMAT(order_date, '%Y-%m')
+	</select>
+	
+	<select id="barChart" resultType="kr.happyjob.study.dashboard.model.ProductSalesDataModel">
+		SELECT 
+			p.pro_cd,
+			p.pro_nm,
+			IFNULL(SUM(ord.order_price)/10000, 0) AS total_sales
+		FROM 
+			tb_product p
+		LEFT JOIN 
+			tb_order ord ON p.pro_cd = ord.pro_cd
+		LEFT JOIN 
+			tb_refund rf ON ord.pro_cd = rf.pro_cd
+		WHERE 
+		    YEAR(ord.order_date) = YEAR(CURRENT_DATE()) AND MONTH(ord.order_date) = MONTH(CURRENT_DATE())
+		GROUP BY 
+			p.pro_cd
+	</select>
+	
+</mapper>

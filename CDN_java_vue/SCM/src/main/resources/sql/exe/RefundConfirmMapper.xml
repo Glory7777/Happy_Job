@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.exe.dao.RefundConfirmDao">
+
+	<!-- 주문 목록 조회 -->
+	<select id="refundDirectionList" resultType="kr.happyjob.study.exe.model.RefundConfirmModel">
+		/*kr.happyjob.study.exe.dao.refundDirectionList*/
+		select dir.direc_cd
+				, dir.direc_date
+				, dir.direc_type
+				, dir.direc_note
+				, dir.refund_cd
+				, dir.order_cd
+		        , ref.refund_cnt
+		        , ref.refund_date
+		        , ref.refund_price
+		        , ref.refund_text
+		        , ord.loginid
+		        , ord.order_date
+		        , ord.order_cnt
+		        , pro.pro_nm
+		from tb_direction dir
+				inner join tb_refund ref on(dir.refund_cd = ref.refund_cd)
+				inner join tb_order ord on(ref.order_cd = ord.order_cd and ref.pro_cd = ord.pro_cd)
+				inner join tb_product pro on(ord.pro_cd = pro.pro_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'refundUserId'.toString()">
+						and ord.loginid like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'proNm'.toString()">
+						and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+								ord.loginid like CONCAT('%', #{searchText}, '%')
+						         or pro.pro_nm like CONCAT('%', #{searchText}, '%')
+							)
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+				and dir.direc_type = 2
+		order by CAST(dir.direc_cd AS SIGNED) desc
+		LIMIT #{startPoint}, #{pageSize}
+	</select>
+	
+	<!-- 목록 전체 갯수 조회 -->
+	<select id="totalRefund" resultType="int">
+		/*kr.happyjob.study.exe.dao.totalRefund*/
+		select count(dir.direc_cd)
+		from tb_direction dir
+				inner join tb_refund ref on(dir.refund_cd = ref.refund_cd)
+				inner join tb_order ord on(ref.order_cd = ord.order_cd and ref.pro_cd = ord.pro_cd)
+				inner join tb_product pro on(ord.pro_cd = pro.pro_cd)
+		<where>
+			<if test="(!searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date between #{searchStartDate} and #{searchEndDate}
+			</if>
+			<if test="(!searchStartDate.equals('')) and (searchEndDate.equals(''))">
+				and ref.refund_date >= #{searchStartDate}
+			</if>
+			<if test="(searchStartDate.equals('')) and (!searchEndDate.equals(''))">
+				and ref.refund_date <![CDATA[<=]]> #{searchEndDate}
+			</if>
+			
+			<if test="(searchText != null) and (!searchText.equals(''))">
+				<choose>
+					<when test="searchSel eq 'refundUserId'.toString()">
+						and ord.loginid like CONCAT('%', #{searchText}, '%')
+					</when>
+					<when test="searchSel eq 'proNm'.toString()">
+						and pro.pro_nm like CONCAT('%', #{searchText}, '%')
+					</when>
+					<otherwise>
+						and (
+								ord.loginid like CONCAT('%', #{searchText}, '%')
+						         or pro.pro_nm like CONCAT('%', #{searchText}, '%')
+							)
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		and dir.direc_type = 2
+	</select>
+	
+	<!-- 반품 승인 -->
+	<update id="refundStUpdate">
+		update tb_refund
+			set refund_st = 1
+				, refund_appr_date = DATE_FORMAT(now(), '%Y-%m-%d')
+		where refund_cd = #{refundCd}
+	</update>
+	
+	<!-- 승인 완료된 반품 목록 (반품상태 1로 변경된것) -->
+	<select id="confirmCompleteList" resultType="kr.happyjob.study.exe.model.RefundListModel">
+		/*kr.happyjob.study.exe.dao.confirmCompleteList*/
+		select refund_cd
+		from tb_refund
+		where refund_st = 1 or refund_st = 2
+	</select>
+	
+</mapper>

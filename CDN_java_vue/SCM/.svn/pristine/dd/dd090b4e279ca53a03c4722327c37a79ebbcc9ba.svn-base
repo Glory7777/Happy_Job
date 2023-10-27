@@ -1,0 +1,25 @@
+package kr.happyjob.study.exe.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import kr.happyjob.study.exe.model.PieChartData;
+import kr.happyjob.study.exe.model.ProductModel;
+import kr.happyjob.study.exe.model.SalesDetailModel;
+
+public interface ProductStatDao {
+
+	// 매출현황 조회
+	public List<ProductModel> productList(Map<String, Object> paramMap) throws Exception;
+	// 매출현황 개수
+	public int productTotal(Map<String, Object> paramMap) throws Exception;
+	
+	// 상품별 조회
+	public List<SalesDetailModel>dtList(Map<String, Object> paramMap) throws Exception;
+	public int dtTotal(Map<String, Object> paramMap) throws Exception;
+	//차트데이터
+	public List<PieChartData> productPieChart(Map<String, Object> paramMap) throws Exception;
+	
+	public List<SalesDetailModel> dtListvue(Map<String, Object> paramMap) throws Exception;
+
+}

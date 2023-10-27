@@ -1,0 +1,254 @@
+package kr.happyjob.study.scm.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.happyjob.study.scm.model.CategoryModel;
+import kr.happyjob.study.scm.model.ProductModel;
+import kr.happyjob.study.scm.model.SupplierModel;
+import kr.happyjob.study.scm.service.SupplierService;
+
+
+@Controller
+@RequestMapping("/scm/")
+public class SupplierController {
+	
+	@Autowired
+	SupplierService supplierService;
+	
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+	
+
+	/**
+	 * 납품업체 관리페이지
+	 */
+	@RequestMapping("supplierInfovue.do")
+	public String supplierInfovue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supplierInfovue");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".supplierInfovue");
+		
+		return "scm/vueSupplierMgr";
+	}
+	
+	/**
+	 * 납품업체 목록 조회
+	 */
+	@RequestMapping("supplierListvue.do")
+	@ResponseBody
+	public Map<String,Object> supplierListvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supplierListvue");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		List<SupplierModel> supList = supplierService.supplierList(paramMap);
+		
+		int totalCnt = supplierService.supplierTotal(paramMap);
+		
+		
+		Map<String,Object> resultMap = new HashMap<String,Object>();
+		
+		resultMap.put("supList", supList);
+		resultMap.put("totalCnt", totalCnt);
+		
+		logger.info("+ End " + className + ".supplierListvue");
+
+		return resultMap;
+	}
+
+	/**
+	 * 납품업체 목록 조회
+	 */
+	@RequestMapping("supProductListvue.do")
+	@ResponseBody
+	public Map<String,Object> supProductListvue(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supProductList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		List<ProductModel> productList = supplierService.productListvue(paramMap);
+		
+		Map<String,Object> resultMap = new HashMap<String,Object>();
+		
+		resultMap.put("productList", productList);
+		
+		logger.info("+ End " + className + ".supProductList");
+
+		return resultMap;
+	}
+	
+	// ==========================================
+	
+	
+	/**
+	 * 납품업체 관리페이지
+	 */
+	@RequestMapping("supplierInfo.do")
+	public String supplierInfo(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supplierInfo");
+		logger.info("   - paramMap : " + paramMap);
+		logger.info("+ End " + className + ".supplierInfo");
+		
+		return "scm/supplierMgr";
+	}
+	
+
+	/**
+	 * 납품업체 목록 조회
+	 */
+	@RequestMapping("supplierList.do")
+	public String supplierList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supplierList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		List<SupplierModel> supList = supplierService.supplierList(paramMap);
+		
+		int totalCnt = supplierService.supplierTotal(paramMap);
+		
+		
+		model.addAttribute("supList", supList);
+		model.addAttribute("totalCnt", totalCnt);
+		
+		logger.info("+ End " + className + ".supplierList");
+
+		return "scm/supplierList";
+	}
+
+	/**
+	 * 납품업체 목록 조회
+	 */
+	@RequestMapping("supProductList.do")
+	public String supProductList(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supProductList");
+		logger.info("   - paramMap : " + paramMap);
+		
+		
+		int pageSize = Integer.parseInt((String) paramMap.get("pageSize"));   
+		int currentPage = Integer.parseInt((String) paramMap.get("currentPage"));   
+		int startpoint = ( currentPage - 1 ) * pageSize;
+		
+		paramMap.put("pageSize", pageSize);
+		paramMap.put("startpoint", startpoint);
+		
+		List<ProductModel> productList = supplierService.productList(paramMap);
+		
+		int productTotalCnt = supplierService.productTotalCnt(paramMap);
+		
+		model.addAttribute("productList", productList);
+		model.addAttribute("productTotalCnt", productTotalCnt);
+		
+		logger.info("+ End " + className + ".supProductList");
+
+		return "scm/supProductList";
+	}
+	
+	
+
+	/**
+	 * 납품업체정보 저장
+	 */
+	@RequestMapping("supplierSave.do")
+	@ResponseBody
+	public Map<String, Object> supplierSave(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supplierSave");
+		logger.info("   - paramMap : " + paramMap);
+		
+		String action = (String) paramMap.get("action");
+		int sqlreturn = 0;
+		
+		paramMap.put("loginid", session.getAttribute("loginId") );
+		
+		
+		if("I".equals(action)) {
+			sqlreturn = supplierService.insertSupplier(paramMap,request);
+		} else if("U".equals(action)) {
+			sqlreturn = supplierService.updateSupplier(paramMap,request);
+		} else if("D".equals(action)) {
+			sqlreturn = supplierService.deleteSupplier(paramMap);
+		}
+		
+		Map<String, Object> returnmap = new HashMap<String, Object>();
+		
+		if(sqlreturn >= 0) {
+			returnmap.put("result", "SUCCESS");
+		} else {
+			returnmap.put("result", "FAIL");
+		}
+		
+		logger.info("+ End " + className + ".supplierSave");
+
+		return returnmap;
+	}	
+		
+
+	/**
+	 * 납품업체 정보 조회
+	 */
+	@RequestMapping("supplierUpdate.do")
+	@ResponseBody
+	public Map<String,Object> supplierUpdate(Model model, @RequestParam Map<String, Object> paramMap, HttpServletRequest request,
+			HttpServletResponse response, HttpSession session) throws Exception {
+		
+		logger.info("+ Start " + className + ".supplierUpdate");
+		logger.info("   - paramMap : " + paramMap);
+		
+		Map<String,Object> returnMap =  new HashMap<String,Object>();
+				
+		SupplierModel selectSupplier = supplierService.selectSupplier(paramMap);
+	
+		returnMap.put("selectSupplier", selectSupplier);
+			
+		logger.info("+ End " + className + ".supplierUpdate");
+
+		return returnMap;
+	}
+	
+
+}

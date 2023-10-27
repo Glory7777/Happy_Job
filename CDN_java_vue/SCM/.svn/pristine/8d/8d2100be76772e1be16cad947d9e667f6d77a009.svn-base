@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.dashboard.dao.DashboardDlmDao">
+	
+	<!-- 배송지시서 조회(대시보드) -->
+	<select id="listDeliveryDirectionDashboard" parameterType="Map" resultType="kr.happyjob.study.dashboard.model.DashboardDlmModel">
+		  select dr.direc_cd
+		        ,dl.deli_cd
+		        ,dl.order_cd
+		        ,dl.pro_cd
+		        ,od.order_hope_date
+		        ,od.loginid
+		        ,dr.direc_date
+		        ,pd.pro_nm
+		        ,dc.detail_name AS deli_st
+		        ,od.order_cnt
+		  from tb_direction dr
+		  inner join tb_delivery dl on dr.deli_cd = dl.deli_cd
+		  inner join tb_order od on dl.order_cd = od.order_cd and dl.pro_cd = od.pro_cd
+		  inner join tb_product pd on dl.pro_cd = pd.pro_cd
+		  inner join tb_detail_code dc on dc.detail_code = dl.deli_st and dc.group_code like 'deliCD'
+		  order by cast(dr.direc_cd as unsigned) DESC
+	</select>
+	
+</mapper>
