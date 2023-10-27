@@ -101,7 +101,7 @@
 import { closeModal } from 'jenesius-vue-modal';
 
 export default {
-  props: { brdno: String, action: String },
+  props: { brdno: String, action: String, handleRequest: Function },
   data: function () {
     return {
       brd_title: '',
@@ -148,6 +148,9 @@ export default {
     }
   },
   methods: {
+    beforeModalClose() {
+      this.handleRequest(this.paction);
+    },
     deletenot: function () {
       this.paction = 'D';
       this.save();
@@ -170,6 +173,8 @@ export default {
         //let params = new URLSearchParams();
         //params.append('brd_no', this.selnoticecd);
 
+        let vm = this;
+
         let frm = document.getElementById('myForm');
         frm.enctype = 'multipart/form-data';
         let fileData = new FormData(frm);
@@ -182,19 +187,20 @@ export default {
 
         fileData.append('brd_no', this.selnoticecd);
 
-        this.axios({
-          url: '/notice/noticedownload.do', // File URL Goes Here
-          data: fileData,
-          method: 'POST',
-          responseType: 'blob',
-        }).then((res) => {
-          console.log(JSON.stringify(res));
+        this.axios
+          .post('/notice/noticeSavefile.do', fileData)
+          .then(function (response) {
+            console.log(JSON.stringify(response));
 
-          if (res.status == '200') {
-            alert(res.data.resultMsg + ' 되었습니다.');
-            closeModal();
-          }
-        });
+            if (response.status == '200') {
+              alert(response.data.resultMsg + ' 되었습니다.');
+              vm.beforeModalClose();
+              closeModal();
+            }
+          })
+          .catch(function (error) {
+            alert('에러! API 요청에 오류가 있습니다. ' + error);
+          });
       }
     },
     download: function () {
@@ -218,6 +224,7 @@ export default {
       });
     },
     closeopup: function () {
+      this.beforeModalClose();
       closeModal();
     },
     selimg: function (event) {
@@ -281,12 +288,18 @@ export default {
         this.regdate = obj.brd_reg_date;
         this.viewcnt = obj.brd_veiws_cnt;
         this.selfile = '';
-        this.delflag = false;
+        this.delflag = true;
         this.isreadonly = false;
         this.sm_file_extend = obj.sm_file_extend;
         this.sm_file_logicalpath = obj.sm_file_logicalpath;
         this.sm_file_nm = obj.sm_file_nm;
         this.sm_file_size = obj.sm_file_size;
+
+        if (this.usertype != 'B' && this.usertype != 'C') {
+          this.isreadonly = false;
+        } else {
+          this.isreadonly = true;
+        }
 
         //obj.sm_file_extend;
         //obj.sm_file_logicalpath;

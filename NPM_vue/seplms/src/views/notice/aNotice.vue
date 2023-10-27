@@ -124,6 +124,7 @@ export default {
       action: '',
       equsel: '',
       lecsel: '',
+      popupreturn: '',
     };
   },
   computed: {},
@@ -143,6 +144,10 @@ export default {
         const modal = await openModal(noticepop, {
           brdno: '',
           action: this.action,
+          handleRequest: (value) => {
+            console.log(value);
+            this.popupreturn = value;
+          },
         });
 
         modal.onclose = () => {
@@ -157,17 +162,23 @@ export default {
         const modal = await openModal(noticepop, {
           brdno: brdno,
           action: this.action,
+          handleRequest: (value) => {
+            console.log(value);
+            this.popupreturn = value;
+          },
         });
 
         modal.onclose = () => {
           //alert('수정 닫음');
           this.fnSearchList();
 
-          // if (this.action == 'U') {
-          //      fnSearchList(divNoticeList.currentPage);
-          //   } else {
-          //     fnSearchList(divNoticeList.currentPage);
-          //   }
+          if (this.popupreturn == 'U') {
+            console.log('수정 조회');
+            this.fnSearchList(this.currentPage);
+          } else {
+            console.log('삭제 조회');
+            this.fnSearchList(this.currentPage);
+          }
 
           //return false; //Modal will not be closed
         };
